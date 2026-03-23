@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Autopilot — SMSF Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#e8591a;--orange2:#f06a2a;--orange-light:#fef3ee;--orange-border:#fcd9c7;
+  --dark:#111827;--dark2:#1f2937;--text:#111827;--text2:#6b7280;--text3:#9ca3af;
+  --surface:#f9fafb;--surface2:#f3f4f6;--border:#e5e7eb;--border2:#d1d5db;
+  --white:#fff;--green:#16a34a;--green-light:#dcfce7;--amber:#d97706;--amber-light:#fef3c7;
+  --red:#dc2626;--red-light:#fee2e2;--blue:#2563eb;--blue-light:#dbeafe;
+  --purple:#7c3aed;--purple-light:#f3e8ff;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--text);background:var(--surface);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font-family:inherit;font-size:14px;border:none;outline:none;transition:all .15s}
+input,select,textarea{font-family:inherit;font-size:14px;outline:none;transition:all .15s}
+.screen{display:none;width:100%;min-height:100vh}.screen.active{display:flex}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-back{background:white;border:1.5px solid var(--border2);color:var(--text2)}.btn-back:hover{border-color:var(--text2);color:var(--dark)}
+.btn-next,.btn-filled{background:var(--orange);color:white;border:none}.btn-next:hover,.btn-filled:hover{background:var(--orange2)}
+.btn-outline{background:white;border:1.5px solid var(--border2);color:var(--text)}.btn-outline:hover{border-color:var(--orange);color:var(--orange)}
+.btn-sm{padding:7px 14px;font-size:13px}.btn-xs{padding:5px 10px;font-size:12px}
+.btn-green{background:var(--green);color:white}.btn-green:hover{background:#15803d}
+.btn-purple{background:var(--purple);color:white}.btn-purple:hover{background:#6d28d9}
+
+/* SIDEBAR */
+#app-screen{flex-direction:row}
+.sidebar{width:240px;background:white;border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;flex-shrink:0;position:sticky;top:0}
+.sidebar-logo{padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sidebar-logo-text{font-size:15px;font-weight:700;color:var(--dark);letter-spacing:-.3px}
+.nav-section-label{padding:16px 16px 6px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:var(--radius-sm);color:var(--text2);cursor:pointer;transition:all .12s;font-size:13px;font-weight:500}
+.nav-item:hover{background:var(--surface);color:var(--dark)}.nav-item.active{background:var(--orange-light);color:var(--orange);font-weight:600}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.nav-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;background:var(--orange);color:white}
+.nav-badge.amber{background:var(--amber)}.nav-badge.green{background:var(--green)}.nav-badge.purple{background:var(--purple)}
+.sidebar-bottom{margin-top:auto;border-top:1px solid var(--border);padding:12px 8px}
+.sidebar-user{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer}
+.sidebar-user:hover{background:var(--surface)}
+.user-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;overflow:hidden}
+.user-avatar img{width:100%;height:100%;object-fit:cover}
+.user-name{font-size:13px;font-weight:600;color:var(--dark)}.user-role{font-size:11px;color:var(--text3)}
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--surface)}
+.topbar{height:56px;background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0}
+.topbar-title{font-size:16px;font-weight:700;color:var(--dark);letter-spacing:-.3px}
+.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+.content{flex:1;overflow-y:auto;padding:24px}
+.panel{display:none}.panel.active{display:block}
+
+/* COMPANY GROUP BADGE */
+.company-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.cb-clime{background:#dbeafe;color:#1d4ed8}.cb-liberty{background:#dcfce7;color:#15803d}
+.cb-riverx{background:#fdf4ff;color:#7e22ce}.cb-aap{background:#fef3ee;color:#e8591a}
+.cb-other{background:#f3f4f6;color:#374151}
+
+/* STATS / CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.stat-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.stat-value{font-size:28px;font-weight:800;letter-spacing:-.8px;color:var(--dark)}
+.stat-tag{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;margin-top:5px}
+.tag-orange{background:var(--orange-light);color:var(--orange)}.tag-green{background:var(--green-light);color:var(--green)}
+.tag-amber{background:var(--amber-light);color:var(--amber)}.tag-red{background:var(--red-light);color:var(--red)}
+.tag-blue{background:var(--blue-light);color:var(--blue)}.tag-gray{background:var(--surface2);color:var(--text2)}
+.tag-purple{background:var(--purple-light);color:var(--purple)}
+.card{background:white;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:13px;font-weight:700;color:var(--dark)}
+
+/* TABLE */
+.table{width:100%;border-collapse:collapse}
+.table th{padding:10px 16px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);background:var(--surface)}
+.table td{padding:11px 16px;border-bottom:1px solid var(--surface2);font-size:13px}
+.table tr:last-child td{border-bottom:none}.table tr:hover td{background:#fafafa;cursor:pointer}
+.matter-name{font-weight:600;color:var(--dark)}.matter-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.stage-pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.pill-start{background:#eff6ff;color:#1d4ed8}.pill-prepare{background:#fdf4ff;color:#7e22ce}
+.pill-check{background:#fff7ed;color:#c2410c}.pill-lodge{background:#fefce8;color:#854d0e}.pill-active{background:#f0fdf4;color:#15803d}
+
+/* STAGES BAR */
+.stages-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.stage-tile{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:all .15s}
+.stage-tile:hover{border-color:var(--orange-border);box-shadow:var(--shadow)}
+.stage-tile-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.stage-indicator{width:8px;height:8px;border-radius:50%}
+.stage-count{font-size:24px;font-weight:800;letter-spacing:-.5px;color:var(--dark)}
+.stage-name{font-size:12px;font-weight:600;color:var(--text2)}
+
+/* MATTER DETAIL */
+.matter-header-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px}
+.matter-title{font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px}
+.matter-meta{font-size:13px;color:var(--text2);margin-bottom:18px}
+.progress-track{display:flex;align-items:center}
+.pt-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
+.pt-step::before{content:'';position:absolute;top:14px;left:-50%;right:50%;height:2px;background:var(--border);z-index:0}
+.pt-step:first-child::before{display:none}
+.pt-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border2);background:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;position:relative;z-index:1;color:var(--text3)}
+.pt-dot.done{background:var(--green);border-color:var(--green);color:white}
+.pt-dot.current{background:var(--orange);border-color:var(--orange);color:white}
+.pt-label{font-size:11px;font-weight:600;color:var(--text3);margin-top:5px}
+.pt-step.done .pt-label{color:var(--green)}.pt-step.current .pt-label{color:var(--orange);font-weight:700}
+.pt-step.done::before,.pt-step.current::before{background:var(--green)}
+
+/* STAGE OWNERSHIP CARD */
+.ownership-strip{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.ownership-card{flex:1;min-width:140px;background:white;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;display:flex;gap:10px;align-items:center;transition:all .15s}
+.ownership-card.active-stage{border-color:var(--orange);background:var(--orange-light)}
+.ownership-card.completed-stage{border-color:var(--green);background:#f0fdf4;opacity:.7}
+.oc-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white}
+.oc-avatar img{width:100%;height:100%;object-fit:cover}
+.oc-info{flex:1;min-width:0}
+.oc-stage{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
+.oc-name{font-size:12px;font-weight:600;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oc-status{font-size:10px;color:var(--text3)}
+.handoff-badge{padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:var(--amber-light);color:var(--amber)}
+
+/* STAFF PROFILE CARD */
+.staff-profile-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:24px;text-align:center;max-width:320px}
+.spc-avatar{width:80px;height:80px;border-radius:50%;margin:0 auto 12px;overflow:hidden;background:var(--orange-light);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--orange)}
+.spc-avatar img{width:100%;height:100%;object-fit:cover}
+.spc-name{font-size:18px;font-weight:800;margin-bottom:2px}
+.spc-role{font-size:13px;color:var(--orange);font-weight:600;margin-bottom:8px}
+.spc-exp{font-size:12px;color:var(--text2);margin-bottom:12px}
+.spc-facts{background:var(--surface);border-radius:var(--radius-sm);padding:12px;text-align:left;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px}
+.spc-fact-row{display:flex;gap:6px;margin-bottom:4px}
+.spc-fact-icon{flex-shrink:0}
+
+/* TABS */
+.matter-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px}
+.mtab{padding:10px 16px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .12s;white-space:nowrap}
+.mtab:hover{color:var(--dark)}.mtab.active{color:var(--orange);border-bottom-color:var(--orange)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+/* DOCUMENTS - YEAR TABS */
+.year-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.year-tab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border2);color:var(--text2);cursor:pointer;transition:all .15s}
+.year-tab:hover{border-color:var(--orange);color:var(--orange)}.year-tab.active{background:var(--orange);border-color:var(--orange);color:white}
+.doc-type-section{margin-bottom:20px}
+.doc-type-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:8px 0 8px;border-bottom:1px solid var(--surface2);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.doc-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:white;transition:all .12s}
+.doc-item:hover{border-color:var(--orange-border);box-shadow:var(--shadow)}
+.doc-icon{width:34px;height:34px;border-radius:var(--radius-sm);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.doc-name{font-size:13px;font-weight:500;flex:1}.doc-meta{font-size:11px;color:var(--text3);margin-top:1px}
+
+/* FILE NOTES */
+.fn-filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.fn-item{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;transition:all .15s}
+.fn-item:hover{border-color:var(--orange-border)}.fn-item.pinned{border-color:var(--amber);background:#fffbeb}
+.fn-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.fn-type-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.fn-meta{flex:1}.fn-subject{font-size:13px;font-weight:600;color:var(--dark)}.fn-submeta{font-size:11px;color:var(--text3)}
+.fn-body{font-size:13px;color:var(--text2);line-height:1.6;padding-left:42px}
+.fn-tags{display:flex;gap:4px;flex-wrap:wrap;padding-left:42px;margin-top:8px}
+.fn-tag{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:var(--surface2);color:var(--text2)}
+.fn-draft{background:var(--amber-light);color:var(--amber);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+
+/* SIGNATURE PAD */
+.sig-pad-wrap{border:2px dashed var(--border2);border-radius:var(--radius);padding:8px;background:#fafafa;cursor:crosshair}
+.sig-pad-wrap canvas{display:block;border-radius:8px;background:white;touch-action:none}
+.sig-option-tabs{display:flex;gap:0;border:1.5px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:14px;width:fit-content}
+.sig-opt{padding:7px 16px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;background:white;border:none;transition:all .15s}
+.sig-opt.active{background:var(--orange);color:white}
+.sig-type-input{font-family:'Dancing Script',cursive;font-size:32px;border:none;border-bottom:2px solid var(--border2);width:100%;padding:8px 4px;background:transparent;color:var(--dark)}
+.sig-type-input:focus{border-bottom-color:var(--orange)}
+
+/* CALL BUTTON */
+.call-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;background:var(--green-light);color:var(--green);border:1.5px solid var(--green);cursor:pointer;transition:all .15s}
+.call-btn:hover{background:var(--green);color:white}
+.call-btn.calling{background:var(--red-light);color:var(--red);border-color:var(--red);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* QUEUE ITEMS */
+.queue-item{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:14px}
+.queue-item:hover{border-color:var(--orange-border);box-shadow:var(--shadow)}
+.q-priority{width:4px;min-height:44px;border-radius:2px;flex-shrink:0}
+.q-high{background:var(--red)}.q-med{background:var(--amber)}.q-low{background:var(--green)}
+.q-body{flex:1}.q-title{font-size:13px;font-weight:700;margin-bottom:3px}.q-sub{font-size:12px;color:var(--text2)}.q-meta{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:white;border-radius:16px;width:540px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.2)}
+.modal.modal-wide{width:700px}.modal.modal-sm{width:400px}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:none;cursor:pointer;font-size:16px;color:var(--text2)}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+
+/* FORM */
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.form-label{font-size:12px;font-weight:600;color:var(--dark)}
+.form-input{padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;color:var(--dark);background:white;width:100%}
+.form-input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(232,89,26,.1)}
+.form-select{padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;color:var(--dark);background:white;width:100%}
+.form-select:focus{border-color:var(--orange)}
+.form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-hint{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;right:28px;background:var(--dark);color:white;padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;z-index:300;transform:translateY(60px);opacity:0;transition:all .25s;display:flex;align-items:center;gap:8px;max-width:340px}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* HANDOFF PANEL */
+.handoff-panel{background:linear-gradient(135deg,#fff7ed,#fef3ee);border:1.5px solid var(--orange-border);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:14px}
+.hp-icon{font-size:24px}.hp-body{flex:1}
+.hp-title{font-size:13px;font-weight:700;color:var(--orange)}.hp-sub{font-size:12px;color:var(--text2);margin-top:2px}
+
+/* CLIENT PORTAL */
+#client-screen{flex-direction:row}
+.client-sidebar{width:220px;background:white;border-right:1px solid var(--border);height:100vh;display:flex;flex-direction:column;flex-shrink:0}
+.client-nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;margin:1px 8px;border-radius:var(--radius-sm);color:var(--text2);cursor:pointer;transition:all .12s;font-size:13px;font-weight:500}
+.client-nav-item:hover{background:var(--surface);color:var(--dark)}.client-nav-item.active{background:var(--orange-light);color:var(--orange);font-weight:600}
+.client-panel{display:none}.client-panel.active{display:block}
+
+/* ASSIGNED WORKER CARD (client-facing) */
+.worker-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;display:flex;gap:16px;align-items:flex-start}
+.wc-photo{width:64px;height:64px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--orange-light);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--orange)}
+.wc-photo img{width:100%;height:100%;object-fit:cover}
+.wc-body{flex:1}
+.wc-name{font-size:16px;font-weight:700;margin-bottom:2px}
+.wc-role{font-size:13px;color:var(--orange);font-weight:600;margin-bottom:6px}
+.wc-bio{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.wc-facts{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text2);background:var(--surface);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px}
+.wc-fact{display:flex;gap:6px;align-items:center}
+
+/* SEARCH BAR TOP */
+.global-search{display:flex;align-items:center;gap:8px;flex:1;max-width:420px}
+.global-search input{flex:1;padding:7px 14px;border:1.5px solid var(--border2);border-radius:20px;font-size:13px;background:var(--surface)}
+.global-search input:focus{border-color:var(--orange);background:white;outline:none}
+
+/* ACTIVITY */
+.activity-list{padding:0}
+.activity-item{display:flex;gap:10px;padding:11px 16px;border-bottom:1px solid var(--surface2)}
+.activity-item:last-child{border-bottom:none}
+.act-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.act-body{flex:1}.act-text{font-size:13px;color:var(--dark)}.act-time{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* TWO COL / MATTER GRID */
+.two-col{display:grid;grid-template-columns:1fr 300px;gap:16px}
+.matter-grid{display:grid;grid-template-columns:1fr 270px;gap:16px}
+.field-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--surface2);font-size:13px}
+.field-row:last-child{border-bottom:none}
+.field-label{color:var(--text2)}.field-value{font-weight:600;color:var(--dark)}
+.task-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;background:white}
+.task-check{width:20px;height:20px;border-radius:5px;border:2px solid var(--border2);flex-shrink:0;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.task-check.done{background:var(--green);border-color:var(--green)}.task-check.done::after{content:'✓';color:white;font-size:11px;font-weight:800}
+.task-name{font-size:13px;font-weight:500}.task-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.notif-item{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--surface2)}
+.notif-item:last-child{border-bottom:none}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0;margin-top:5px}.notif-dot.read{background:var(--border2)}
+.log-row{display:grid;grid-template-columns:160px 160px 1fr 120px;gap:8px;padding:10px 16px;border-bottom:1px solid var(--surface2);font-size:12px;align-items:center}
+.log-header{background:var(--surface);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+.log-ts{font-family:monospace;color:var(--text2)}
+.filters{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.search-input{padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;color:var(--dark);flex:1;min-width:200px;background:white}
+.search-input:focus{border-color:var(--orange)}
+.filter-select{padding:8px 10px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;color:var(--dark);background:white}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:16px;background:white}
+.upload-zone:hover{border-color:var(--orange);background:var(--orange-light)}
+.user-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--surface2)}
+.user-row:last-child{border-bottom:none}
+.role-pill{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+
+/* ONBOARD */
+#onboard-screen{background:white;flex-direction:column;align-items:center}
+.onboard-header{width:100%;border-bottom:1px solid var(--border);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px}.logo-icon{width:36px;height:36px}.logo-text{font-size:18px;font-weight:700;color:var(--dark);letter-spacing:-.4px}
+.onboard-progress{display:flex;align-items:center;gap:8px}
+.prog-step{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text3);font-weight:500}
+.prog-step.done{color:var(--orange)}.prog-step.current{color:var(--dark);font-weight:600}
+.prog-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text3);background:white}
+.prog-dot.done{background:var(--orange);border-color:var(--orange);color:white}.prog-dot.current{border-color:var(--dark);color:var(--dark)}
+.prog-line{width:32px;height:1px;background:var(--border2)}.prog-line.done{background:var(--orange)}
+.onboard-body{flex:1;width:100%;max-width:900px;padding:40px 20px;margin:0 auto}
+.onboard-step{display:none}.onboard-step.active{display:block}
+.step-label{font-size:12px;font-weight:600;color:var(--orange);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.step-title{font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
+.step-sub{font-size:15px;color:var(--text2);margin-bottom:32px}
+.onboard-footer{width:100%;border-top:1px solid var(--border);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;background:white}
+.admin-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:620px}
+.admin-card{border:2px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:all .2s;position:relative}
+.admin-card:hover{border-color:var(--orange-border)}.admin-card.selected{border-color:var(--orange);background:var(--orange-light)}
+.admin-card-title{font-size:17px;font-weight:700;margin-bottom:6px}.admin-card-desc{font-size:13px;color:var(--text2);line-height:1.5}
+.select-check{position:absolute;top:16px;right:16px;width:22px;height:22px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent}
+.admin-card.selected .select-check{background:var(--orange);border-color:var(--orange);color:white}
+.pkg-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;max-width:900px}
+.pkg-card{border:2px solid var(--border);border-radius:var(--radius);padding:24px;cursor:pointer;transition:all .2s;position:relative}
+.pkg-card:hover{border-color:var(--orange-border);box-shadow:var(--shadow)}.pkg-card.selected{border-color:var(--orange);background:var(--orange-light)}
+.pkg-name{font-size:17px;font-weight:700;margin-bottom:6px}.pkg-price{font-size:30px;font-weight:800;color:var(--orange);letter-spacing:-.5px;margin-bottom:2px}.pkg-price-sub{font-size:12px;color:var(--text3);margin-bottom:14px}
+.pkg-features{list-style:none;padding:0}.pkg-features li{display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--text2);padding:4px 0;line-height:1.4}
+.pkg-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px}
+.assign-stage-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:16px}
+.assign-stage-card{border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.assign-stage-card .stage-name{font-size:12px;font-weight:700;margin-bottom:8px;color:var(--dark)}
+.assign-stage-card select{width:100%;padding:7px 8px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:12px;background:white;color:var(--dark)}
+.member-card{border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;max-width:600px}
+.member-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.member-card-title{font-size:13px;font-weight:600}
+.review-section{border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;max-width:620px}
+.review-section-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.review-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--surface2);font-size:13px}
+.review-row:last-child{border-bottom:none}.review-label{color:var(--text2)}.review-value{font-weight:500}
+.total-box{background:var(--orange-light);border:1.5px solid var(--orange-border);border-radius:var(--radius);padding:16px 20px;max-width:620px;display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.total-price{font-size:22px;font-weight:800;color:var(--orange)}
+.success-screen{background:white;border-radius:var(--radius);max-width:480px;margin:0 auto;text-align:center;padding:48px 32px;margin-top:40px}
+@media(max-width:1100px){.two-col,.matter-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<!-- ═══ ONBOARDING ═══ -->
+<div id="onboard-screen" class="screen active">
+  <div class="onboard-header">
+    <div class="logo">
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none">
+        <path d="M18 4C10.268 4 4 10.268 4 18s6.268 14 14 14 14-6.268 14-14S25.732 4 18 4z" fill="#fef3ee" stroke="#e8591a" stroke-width="1.5"/>
+        <path d="M18 8v10M10 18a8 8 0 0 0 16 0" stroke="#e8591a" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="18" cy="18" r="2.5" fill="#e8591a"/>
+        <path d="M12 13l4.5 4M24 13l-4.5 4" stroke="#e8591a" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-text">Admin Autopilot</span>
+    </div>
+    <div class="onboard-progress" id="onboard-progress">
+      <div class="prog-step current" id="ps1"><div class="prog-dot current">1</div><span>Service</span></div>
+      <div class="prog-line" id="pl1"></div>
+      <div class="prog-step" id="ps2"><div class="prog-dot" id="pd2">2</div><span>Package</span></div>
+      <div class="prog-line" id="pl2"></div>
+      <div class="prog-step" id="ps3"><div class="prog-dot" id="pd3">3</div><span>Fund</span></div>
+      <div class="prog-line" id="pl3"></div>
+      <div class="prog-step" id="ps4"><div class="prog-dot" id="pd4">4</div><span>Members</span></div>
+      <div class="prog-line" id="pl4"></div>
+      <div class="prog-step" id="ps5"><div class="prog-dot" id="pd5">5</div><span>Review</span></div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="goToStaffLogin()">Staff login →</button>
+  </div>
+  <div class="onboard-body">
+
+    <!-- STEP 1 -->
+    <div class="onboard-step active" id="step-1">
+      <div class="step-label">Step 1 of 6</div>
+      <div class="step-title">Choose your administration service</div>
+      <div class="step-sub">Select how you'd like your SMSF administered</div>
+      <div class="admin-cards">
+        <div class="admin-card selected" id="admin-aap" onclick="selectAdmin('aap')">
+          <div class="select-check">✓</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--orange);color:white;margin-bottom:10px">Full-Service</div>
+          <div class="admin-card-title">Admin Autopilot Administration</div>
+          <div class="admin-card-desc">Professional SMSF administration. ASIC, ATO and compliance handled for you. Dedicated bookkeeper, compliance officer and tax agent assigned to your file.</div>
+        </div>
+        <div class="admin-card" id="admin-byoa" onclick="selectAdmin('byoa')">
+          <div class="select-check">✓</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--surface2);color:var(--text2);margin-bottom:10px">External Admin</div>
+          <div class="admin-card-title">Bring Your Own Administrator</div>
+          <div class="admin-card-desc">Use your existing administrator — platform access remains free. You manage all lodgements and compliance.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="onboard-step" id="step-2">
+      <div class="step-label">Step 2 of 6</div>
+      <div class="step-title">Select your package</div>
+      <div class="step-sub">Choose the administration package that suits your SMSF</div>
+      <div class="pkg-cards">
+        <div class="pkg-card selected" id="pkg-default" onclick="selectPkg('default','$999')">
+          <div class="select-check">✓</div>
+          <div style="display:inline-flex;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:#f0fdf4;color:var(--green);margin-bottom:10px">⭐ Most popular</div>
+          <div class="pkg-name">Default + Accounting</div>
+          <div class="pkg-price">$999</div><div class="pkg-price-sub">AUD/year</div>
+          <ul class="pkg-features">
+            <li>ASIC annual review fees</li><li>ATO registration &amp; compliance</li>
+            <li>Full accounting services</li><li>Annual audit coordination</li>
+            <li>Tax return lodgement</li><li>Stocks, ETFs, crypto &amp; cash</li>
+            <li style="color:var(--red);font-style:italic">✗ No unlisted assets</li>
+          </ul>
+        </div>
+        <div class="pkg-card" id="pkg-unlisted" onclick="selectPkg('unlisted','$1,149')">
+          <div class="select-check">✓</div>
+          <div style="display:inline-flex;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--orange);color:white;margin-bottom:10px">🏢 Unlisted assets</div>
+          <div class="pkg-name">Default + Accounting</div>
+          <div style="display:flex;align-items:baseline;gap:6px"><div class="pkg-price">$999</div><div style="font-size:13px;color:var(--orange);font-weight:700">+ $150</div></div>
+          <div class="pkg-price-sub">AUD/year · unlisted add-on</div>
+          <ul class="pkg-features">
+            <li>Everything in Default</li><li>Unlisted asset support</li>
+            <li>Private equity &amp; debt</li><li>Managed investment schemes</li>
+          </ul>
+          <div style="margin-top:10px;padding:8px;background:var(--orange-light);border:1px solid var(--orange-border);border-radius:6px;font-size:11px;color:var(--orange);font-weight:600">Total: $1,149 AUD/year</div>
+        </div>
+        <div class="pkg-card" id="pkg-byoa" onclick="selectPkg('byoa','$1,399')">
+          <div class="select-check">✓</div>
+          <div style="display:inline-flex;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:#eff6ff;color:#1d4ed8;margin-bottom:10px">🧾 Bring your accountant</div>
+          <div class="pkg-name">BYOA Package</div>
+          <div class="pkg-price">$1,399</div><div class="pkg-price-sub">AUD/year</div>
+          <ul class="pkg-features">
+            <li>ASIC &amp; ATO compliance</li><li>Annual audit coordination</li>
+            <li>Tax return preparation</li><li>Compliance monitoring</li>
+            <li style="color:var(--text3)">You supply your own accountant</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="onboard-step" id="step-3">
+      <div class="step-label">Step 3 of 6</div>
+      <div class="step-title">Fund details</div>
+      <div class="step-sub">Tell us about your self-managed super fund</div>
+      <div style="max-width:600px">
+        <div class="form-grid2">
+          <div class="form-group" style="grid-column:span 2"><label class="form-label">SMSF name</label><input class="form-input" placeholder="e.g. Smith Family Superannuation Fund" id="fund-name"></div>
+          <div class="form-group"><label class="form-label">ABN (if registered)</label><input class="form-input" placeholder="12 345 678 901" id="fund-abn"></div>
+          <div class="form-group"><label class="form-label">TFN (if known)</label><input class="form-input" placeholder="Tax file number" id="fund-tfn"></div>
+          <div class="form-group"><label class="form-label">Establishment date</label><input class="form-input" type="date" id="fund-date" value="2026-01-15"></div>
+          <div class="form-group"><label class="form-label">Fund type</label>
+            <select class="form-select" id="fund-type"><option>New SMSF Setup</option><option>Existing SMSF — Takeover</option><option>SMSF + Corporate Trustee</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">Company group / referrer</label>
+            <select class="form-select" id="fund-company"><option value="">— Select firm —</option><option>Clime ASX</option><option>Liberty</option><option>RiverX</option><option>AAP (direct)</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">Referrer name (optional)</label><input class="form-input" placeholder="e.g. David Chen" id="fund-referrer"></div>
+        </div>
+        <div style="border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:14px">Trustee structure</div>
+          <div style="display:flex;gap:12px">
+            <div id="tr-individual" onclick="selectTrustee('individual')" style="flex:1;border:1.5px solid var(--orange);background:var(--orange-light);border-radius:var(--radius-sm);padding:12px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--orange)"><div style="width:16px;height:16px;border-radius:50%;background:var(--orange);border:2px solid var(--orange);flex-shrink:0"></div>Individual trustees</div>
+            <div id="tr-corporate" onclick="selectTrustee('corporate')" style="flex:1;border:1.5px solid var(--border2);border-radius:var(--radius-sm);padding:12px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text2)"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0"></div>Corporate trustee</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4 — MEMBERS -->
+    <div class="onboard-step" id="step-4">
+      <div class="step-label">Step 4 of 6</div>
+      <div class="step-title">Fund members &amp; trustees</div>
+      <div class="step-sub">Add all members (maximum 6)</div>
+      <div id="members-container">
+        <div class="member-card"><div class="member-card-header"><div class="member-card-title">Member 1 (primary contact)</div></div>
+          <div class="form-grid2">
+            <div class="form-group"><label class="form-label">First name</label><input class="form-input" value="John"></div>
+            <div class="form-group"><label class="form-label">Last name</label><input class="form-input" value="Smith"></div>
+            <div class="form-group"><label class="form-label">Date of birth</label><input class="form-input" type="date" value="1968-06-12"></div>
+            <div class="form-group"><label class="form-label">TFN</label><input class="form-input" placeholder="Member TFN"></div>
+            <div class="form-group" style="grid-column:span 2"><label class="form-label">Email</label><input class="form-input" type="email" value="john@smithfamily.com.au"></div>
+            <div class="form-group"><label class="form-label">Mobile</label><input class="form-input" placeholder="+61 4XX XXX XXX"></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="addMember()" style="margin-top:4px">+ Add member</button>
+    </div>
+
+    <!-- STEP 5 — REVIEW -->
+    <div class="onboard-step" id="step-5">
+      <div class="step-label">Step 5 of 5</div>
+      <div class="step-title">Review your setup</div>
+      <div class="step-sub">Confirm everything before we create your SMSF matter</div>
+      <div class="review-section">
+        <div class="review-section-title">Administration<button class="btn btn-xs btn-outline" onclick="goToStep(1)">Edit</button></div>
+        <div class="review-row"><div class="review-label">Provider</div><div class="review-value">Admin Autopilot</div></div>
+        <div class="review-row"><div class="review-label">Package</div><div class="review-value" id="r-package">Default + Accounting</div></div>
+      </div>
+      <div class="review-section">
+        <div class="review-section-title">Fund details<button class="btn btn-xs btn-outline" onclick="goToStep(3)">Edit</button></div>
+        <div class="review-row"><div class="review-label">Fund name</div><div class="review-value" id="r-fund">Smith Family Superannuation Fund</div></div>
+        <div class="review-row"><div class="review-label">Company group</div><div class="review-value" id="r-company">—</div></div>
+        <div class="review-row"><div class="review-label">Type</div><div class="review-value" id="r-type">New SMSF Setup</div></div>
+      </div>
+      <div class="review-section" style="background:var(--surface);border-color:var(--border2)">
+        <div class="review-section-title" style="color:var(--text3)">Team assignment</div>
+        <div class="review-row"><div class="review-label">Stage allocation</div><div class="review-value" style="color:var(--text2);font-size:12px">Assigned by Admin Autopilot admin team</div></div>
+        <div class="review-row"><div class="review-label">Preparation</div><div class="review-value">Allocated on matter creation</div></div>
+      </div>
+      <div class="total-box"><div style="font-size:14px;font-weight:600">Annual administration fee</div><div class="total-price" id="r-price">$999 AUD/year</div></div>
+      <div style="font-size:12px;color:var(--text3);margin-top:10px;max-width:500px;line-height:1.5">By proceeding you authorise Admin Autopilot to act as your registered tax agent for SMSF lodgement purposes.</div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="onboard-step" id="step-success">
+      <div class="success-screen">
+        <div style="font-size:56px;margin-bottom:16px">🎉</div>
+        <div style="font-size:22px;font-weight:800;margin-bottom:8px">Your SMSF matter is live!</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:28px">Matter ID: <strong>AAP-2026-0847</strong><br>Emma Wilson has been notified and will accept your file shortly. You'll receive an email with your KYC verification link.</div>
+        <button class="btn btn-filled" onclick="goToClientPortal()" style="margin-right:8px">Go to my portal →</button>
+        <button class="btn btn-outline" onclick="goToStaffLogin()">Staff login</button>
+      </div>
+    </div>
+  </div>
+  <div class="onboard-footer">
+    <button class="btn btn-back" id="btn-back" onclick="prevStep()" style="visibility:hidden">← Back</button>
+    <div style="font-size:12px;color:var(--text3)" id="footer-note">Takes about 5 minutes</div>
+    <button class="btn btn-next" id="btn-next" onclick="nextStep()">Continue →</button>
+  </div>
+</div>
+
+
+<!-- ═══ STAFF LOGIN ═══ -->
+<div id="login-screen" class="screen" style="background:var(--surface);align-items:center;justify-content:center">
+  <div style="width:400px;background:white;border:1px solid var(--border);border-radius:16px;padding:32px;box-shadow:var(--shadow)">
+    <div class="logo" style="margin-bottom:24px">
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none"><path d="M18 4C10.268 4 4 10.268 4 18s6.268 14 14 14 14-6.268 14-14S25.732 4 18 4z" fill="#fef3ee" stroke="#e8591a" stroke-width="1.5"/><circle cx="18" cy="18" r="2.5" fill="#e8591a"/><path d="M18 8v8M10 14l6.5 3M26 14l-6.5 3" stroke="#e8591a" stroke-width="2" stroke-linecap="round"/></svg>
+      <span class="logo-text">Admin Autopilot</span>
+    </div>
+    <div style="font-size:20px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px">Staff sign in</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Administration platform — authorised staff only</div>
+    <div style="background:var(--surface);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Demo accounts</div>
+      <button onclick="pickLogin('sarah@aap.com.au','Sarah Chen','Master Owner','SC','#e8591a')" style="display:flex;width:100%;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:6px;background:white;border:1px solid var(--border);margin-bottom:6px;cursor:pointer;text-align:left"><div><div style="font-size:13px;font-weight:600">Sarah Chen</div><div style="font-size:11px;color:var(--text3)">Master Owner</div></div><span style="font-size:11px;color:var(--text3)">→</span></button>
+      <button onclick="pickLogin('emma@aap.com.au','Emma Wilson','Bookkeeper','EW','#7c3aed')" style="display:flex;width:100%;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:6px;background:white;border:1px solid var(--border);margin-bottom:6px;cursor:pointer;text-align:left"><div><div style="font-size:13px;font-weight:600">Emma Wilson</div><div style="font-size:11px;color:var(--text3)">Bookkeeper</div></div><span style="font-size:11px;color:var(--text3)">→</span></button>
+      <button onclick="pickLogin('michael@aap.com.au','Michael Torres','Compliance','MT','#059669')" style="display:flex;width:100%;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:6px;background:white;border:1px solid var(--border);cursor:pointer;text-align:left"><div><div style="font-size:13px;font-weight:600">Michael Torres</div><div style="font-size:11px;color:var(--text3)">Compliance Officer</div></div><span style="font-size:11px;color:var(--text3)">→</span></button>
+    </div>
+    <div style="margin-bottom:12px"><div style="font-size:12px;font-weight:600;margin-bottom:5px">Email</div><input class="form-input" id="l-email" style="border:1.5px solid var(--border2)" placeholder="your@aap.com.au"></div>
+    <div style="margin-bottom:16px"><div style="font-size:12px;font-weight:600;margin-bottom:5px">Password</div><input class="form-input" type="password" style="border:1.5px solid var(--border2)" value="demo123"></div>
+    <button class="btn btn-filled" style="width:100%;justify-content:center" onclick="doStaffLogin()">Sign in →</button>
+    <button onclick="goToOnboard()" style="width:100%;text-align:center;font-size:12px;color:var(--text3);background:none;border:none;margin-top:12px;cursor:pointer">← Client onboarding</button>
+  </div>
+</div>
+
+<!-- ═══ STAFF APP ═══ -->
+<div id="app-screen" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <svg width="28" height="28" viewBox="0 0 36 36" fill="none"><path d="M18 4C10.268 4 4 10.268 4 18s6.268 14 14 14 14-6.268 14-14S25.732 4 18 4z" fill="#fef3ee" stroke="#e8591a" stroke-width="1.5"/><circle cx="18" cy="18" r="2.5" fill="#e8591a"/><path d="M18 8v8M10 14l6.5 3M26 14l-6.5 3" stroke="#e8591a" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span class="sidebar-logo-text">Admin Autopilot</span>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" onclick="showPanel('dashboard',this)"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg>Dashboard</div>
+    <div class="nav-item" onclick="showPanel('clients',this)"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5zm0 1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>Clients<span class="nav-badge">12</span></div>
+    <div class="nav-item" onclick="showPanel('companies',this)"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M14.763.075A.5.5 0 0 1 15 .5v15a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5V14h-1v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V10a.5.5 0 0 1 .342-.474L6 8.64V5.5a.5.5 0 0 1 .276-.447l8-4a.5.5 0 0 1 .487.022zM6 9.694V15h2v-1.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5V15h2V1.309l-7 3.5v4.885z"/></svg>Companies</div>
+    <div class="nav-section-label">Queues</div>
+    <div class="nav-item" onclick="showPanel('preparation',this)"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.235.235 0 0 1 .02-.022z"/></svg>Preparation<span class="nav-badge purple">4</span></div>
+    <div class="nav-item" onclick="showPanel('compliance',this)"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>Compliance<span class="nav-badge amber">3</span></div>
+    <div class="nav-item" onclick="showPanel('lodgement',this)"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>Lodgement<span class="nav-badge green">2</span></div>
+    <div class="nav-section-label">Tools</div>
+    <div class="nav-item" onclick="showPanel('kyc',this)"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>KYC</div>
+    <div class="nav-section-label">Admin</div>
+    <div class="nav-item" onclick="showPanel('users',this)"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/><path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>Staff Profiles</div>
+    <div class="nav-item" onclick="showPanel('notifications',this)"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917z"/></svg>Notifications<span class="nav-badge">5</span></div>
+    <div class="nav-item" onclick="showPanel('auditlog',this)"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0 2.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg>Audit Log</div>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user" onclick="showPanel('users',null)">
+        <div class="user-avatar" id="s-avatar" style="background:var(--orange)">SC</div>
+        <div><div class="user-name" id="s-name">Sarah Chen</div><div class="user-role" id="s-role">Master Owner</div></div>
+      </div>
+      <button onclick="doLogout()" style="width:100%;text-align:center;font-size:11px;color:var(--text3);background:none;border:none;padding:6px;cursor:pointer">Sign out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="t-title">Dashboard</div>
+      <div class="global-search">
+        <input placeholder="Search clients, ABN, fund name, company…" oninput="runSearch(this.value)">
+      </div>
+      <div class="topbar-actions">
+        <select id="company-filter" class="filter-select" style="font-size:12px" onchange="filterByCompany(this.value)"><option value="">All companies</option><option>Clime ASX</option><option>Liberty</option><option>RiverX</option><option>AAP</option></select>
+        <button class="btn btn-outline btn-sm" onclick="openModal('new-matter-modal')">+ New client</button>
+        <button class="btn btn-filled btn-sm" onclick="goToOnboard()">Onboarding ↗</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Total clients</div><div class="stat-value">24</div><div class="stat-tag tag-orange">↑ 3 this month</div></div>
+          <div class="stat-card"><div class="stat-label">Pending handoffs</div><div class="stat-value">3</div><div class="stat-tag tag-amber">Awaiting acceptance</div></div>
+          <div class="stat-card"><div class="stat-label">KYC pending</div><div class="stat-value">5</div><div class="stat-tag tag-red">2 overdue</div></div>
+          <div class="stat-card"><div class="stat-label">Call notes to approve</div><div class="stat-value">2</div><div class="stat-tag tag-purple">Draft ready</div></div>
+        </div>
+        <div class="stages-bar">
+          <div class="stage-tile" onclick="showPanel('clients',null)"><div class="stage-tile-top"><div class="stage-indicator" style="background:#3b82f6"></div><span style="font-size:10px;color:var(--text3)">→ Prepare</span></div><div class="stage-count">4</div><div class="stage-name">Start</div></div>
+          <div class="stage-tile" onclick="showPanel('preparation',null)"><div class="stage-tile-top"><div class="stage-indicator" style="background:#a855f7"></div><span style="font-size:10px;color:var(--text3)">→ Check</span></div><div class="stage-count">5</div><div class="stage-name">Prepare</div></div>
+          <div class="stage-tile" onclick="showPanel('compliance',null)"><div class="stage-tile-top"><div class="stage-indicator" style="background:var(--orange)"></div><span style="font-size:10px;color:var(--text3)">→ Lodge</span></div><div class="stage-count">3</div><div class="stage-name">Check</div></div>
+          <div class="stage-tile" onclick="showPanel('lodgement',null)"><div class="stage-tile-top"><div class="stage-indicator" style="background:var(--amber)"></div><span style="font-size:10px;color:var(--text3)">→ Active</span></div><div class="stage-count">2</div><div class="stage-name">Lodge</div></div>
+          <div class="stage-tile"><div class="stage-tile-top"><div class="stage-indicator" style="background:var(--green)"></div><span style="font-size:10px;color:var(--text3)">Ongoing</span></div><div class="stage-count">10</div><div class="stage-name">Active</div></div>
+        </div>
+        <!-- PENDING HANDOFFS ALERT -->
+        <div class="handoff-panel" id="handoff-alert">
+          <div class="hp-icon">🔔</div>
+          <div class="hp-body">
+            <div class="hp-title">3 pending stage handoffs</div>
+            <div class="hp-sub">Williams Corp Trustee waiting for Rachel Park (Lodge) · Smith Family SMSF waiting for Michael Torres (Check) · Johnson Retirement waiting for Emma Wilson (Prepare)</div>
+          </div>
+          <button class="btn btn-filled btn-sm" onclick="openModal('handoffs-modal')">Review handoffs</button>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Recent clients</div><button class="btn btn-outline btn-xs" onclick="showPanel('clients',null)">View all</button></div>
+            <table class="table">
+              <thead><tr><th>Client / Fund</th><th>Company</th><th>Stage</th><th>Owner</th></tr></thead>
+              <tbody>
+                <tr onclick="openMatter('M001')"><td><div class="matter-name">Smith Family SMSF</div><div class="matter-sub">M001 · New SMSF Setup</div></td><td><span class="company-badge cb-liberty">Liberty</span></td><td><span class="stage-pill pill-check">Check</span></td><td>M. Torres</td></tr>
+                <tr onclick="openMatter('M002')"><td><div class="matter-name">Johnson Retirement Fund</div><div class="matter-sub">M002 · Existing Onboarding</div></td><td><span class="company-badge cb-clime">Clime ASX</span></td><td><span class="stage-pill pill-prepare">Prepare</span></td><td>E. Wilson</td></tr>
+                <tr onclick="openMatter('M003')"><td><div class="matter-name">Williams Corp Trustee</div><div class="matter-sub">M003 · Corporate Trustee</div></td><td><span class="company-badge cb-aap">AAP</span></td><td><span class="stage-pill pill-lodge">Lodge</span></td><td>R. Park</td></tr>
+                <tr onclick="openMatter('M004')"><td><div class="matter-name">Brown Family Super</div><div class="matter-sub">M004 · New SMSF Setup</div></td><td><span class="company-badge cb-riverx">RiverX</span></td><td><span class="stage-pill pill-start">Start</span></td><td>E. Wilson</td></tr>
+                <tr onclick="openMatter('M005')"><td><div class="matter-name">Chen Investment Fund</div><div class="matter-sub">M005 · Annual Compliance</div></td><td><span class="company-badge cb-clime">Clime ASX</span></td><td><span class="stage-pill pill-active">Active</span></td><td>S. Chen</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Recent activity</div></div>
+            <div class="activity-list">
+              <div class="activity-item"><div class="act-icon" style="background:#dcfce7">✓</div><div class="act-body"><div class="act-text">KYC passed — John Smith · Smith Family SMSF</div><div class="act-time">10 min ago · Michael Torres</div></div></div>
+              <div class="activity-item"><div class="act-icon" style="background:#fdf4ff">📞</div><div class="act-body"><div class="act-text"><strong>Call note draft ready</strong> — Johnson Retirement Fund · Echo Notes</div><div class="act-time">22 min ago · 3CX / BizGPT</div></div></div>
+              <div class="activity-item"><div class="act-icon" style="background:#dbeafe">📄</div><div class="act-body"><div class="act-text">Document uploaded — Trust Deed · Johnson Retirement</div><div class="act-time">42 min ago · Emma Wilson</div></div></div>
+              <div class="activity-item"><div class="act-icon" style="background:#fef3ee">→</div><div class="act-body"><div class="act-text"><strong>Handoff pending</strong> — Williams Corp → Lodge · Rachel Park notified</div><div class="act-time">1 hr ago · Sarah Chen</div></div></div>
+              <div class="activity-item"><div class="act-icon" style="background:#f3f4f6">🆕</div><div class="act-body"><div class="act-text">New client — Brown Family Super · RiverX referral</div><div class="act-time">Yesterday · Emma Wilson</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTS -->
+      <div class="panel" id="panel-clients">
+        <div class="filters">
+          <input type="text" class="search-input" placeholder="Search clients, ABN, fund name…" oninput="filterMatters(this.value)">
+          <select class="filter-select" onchange="filterMatters()"><option value="">All stages</option><option>Start</option><option>Prepare</option><option>Check</option><option>Lodge</option><option>Active</option></select>
+          <select class="filter-select" id="company-filter2" onchange="filterMatters()"><option value="">All companies</option><option>Clime ASX</option><option>Liberty</option><option>RiverX</option><option>AAP</option></select>
+          <button class="btn btn-filled btn-sm" onclick="openModal('new-matter-modal')">+ New client</button>
+        </div>
+        <div class="card">
+          <table class="table"><thead><tr><th>Client / Fund</th><th>Company</th><th>Type</th><th>Stage</th><th>Owner</th><th>Due</th></tr></thead>
+          <tbody id="matters-tbody">
+            <tr onclick="openMatter('M001')"><td><div class="matter-name">Smith Family SMSF</div><div class="matter-sub">M001 · ABN 12 345 678 901</div></td><td><span class="company-badge cb-liberty">Liberty</span></td><td>New SMSF</td><td><span class="stage-pill pill-check">Check</span></td><td>M. Torres</td><td>22 Mar</td></tr>
+            <tr onclick="openMatter('M002')"><td><div class="matter-name">Johnson Retirement Fund</div><div class="matter-sub">M002</div></td><td><span class="company-badge cb-clime">Clime ASX</span></td><td>Existing</td><td><span class="stage-pill pill-prepare">Prepare</span></td><td>E. Wilson</td><td>25 Mar</td></tr>
+            <tr onclick="openMatter('M003')"><td><div class="matter-name">Williams Corp Trustee</div><div class="matter-sub">M003 · ACN 098 765 432</div></td><td><span class="company-badge cb-aap">AAP</span></td><td>Corp Trustee</td><td><span class="stage-pill pill-lodge">Lodge</span></td><td>R. Park</td><td>28 Mar</td></tr>
+            <tr onclick="openMatter('M004')"><td><div class="matter-name">Brown Family Super</div><div class="matter-sub">M004</div></td><td><span class="company-badge cb-riverx">RiverX</span></td><td>New SMSF</td><td><span class="stage-pill pill-start">Start</span></td><td>E. Wilson</td><td>30 Mar</td></tr>
+            <tr onclick="openMatter('M005')"><td><div class="matter-name">Chen Investment Fund</div><div class="matter-sub">M005</div></td><td><span class="company-badge cb-clime">Clime ASX</span></td><td>Compliance</td><td><span class="stage-pill pill-active">Active</span></td><td>S. Chen</td><td>—</td></tr>
+            <tr onclick="openMatter('M006')"><td><div class="matter-name">Davis Investment Fund</div><div class="matter-sub">M006</div></td><td><span class="company-badge cb-liberty">Liberty</span></td><td>New SMSF</td><td><span class="stage-pill pill-check">Check</span></td><td>S. Chen</td><td>24 Mar</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <!-- COMPANIES -->
+      <div class="panel" id="panel-companies">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn btn-filled btn-sm" onclick="openModal('new-company-modal')">+ Add company</button></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+          <div class="card" style="cursor:pointer" onclick="filterByCompanyAndOpen('Clime ASX')">
+            <div style="padding:20px">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#1d4ed8">C</div>
+                <div><div style="font-size:15px;font-weight:700">Clime ASX</div><div style="font-size:12px;color:var(--text2)">Referrer · Financial planning</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+                <div><div style="color:var(--text3);font-weight:600;margin-bottom:2px">CLIENTS</div><div style="font-size:20px;font-weight:800;color:var(--dark)">8</div></div>
+                <div><div style="color:var(--text3);font-weight:600;margin-bottom:2px">ACTIVE</div><div style="font-size:20px;font-weight:800;color:var(--green)">5</div></div>
+              </div>
+              <div style="margin-top:12px;font-size:12px;color:var(--text2)">Contact: David Chen · david@clime.com.au</div>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer" onclick="filterByCompanyAndOpen('Liberty')">
+            <div style="padding:20px">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#15803d">L</div>
+                <div><div style="font-size:15px;font-weight:700">Liberty</div><div style="font-size:12px;color:var(--text2)">Referrer · Mortgage broker</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+                <div><div style="color:var(--text3);font-weight:600;margin-bottom:2px">CLIENTS</div><div style="font-size:20px;font-weight:800;color:var(--dark)">5</div></div>
+                <div><div style="color:var(--text3);font-weight:600;margin-bottom:2px">ACTIVE</div><div style="font-size:20px;font-weight:800;color:var(--green)">3</div></div>
+              </div>
+              <div style="margin-top:12px;font-size:12px;color:var(--text2)">Contact: Sarah Lane · sarah@liberty.com.au</div>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer" onclick="filterByCompanyAndOpen('RiverX')">
+            <div style="padding:20px">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:#fdf4ff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#7e22ce">R</div>
+                <div><div style="font-size:15px;font-weight:700">RiverX</div><div style="font-size:12px;color:var(--text2)">Referrer · Wealth management</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+                <div><div style="color:var(--text3);font-weight:600;margin-bottom:2px">CLIENTS</div><div style="font-size:20px;font-weight:800;color:var(--dark)">3</div></div>
+                <div><div style="color:var(--text3);font-weight:600;margin-bottom:2px">ACTIVE</div><div style="font-size:20px;font-weight:800;color:var(--green)">1</div></div>
+              </div>
+              <div style="margin-top:12px;font-size:12px;color:var(--text2)">Contact: Mark Rivers · mark@riverx.com.au</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- MATTER DETAIL -->
+      <div class="panel" id="panel-matter-detail">
+        <button onclick="showPanel('clients',null)" class="btn btn-outline btn-xs" style="margin-bottom:14px">← Back to clients</button>
+        <div class="matter-header-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <span class="stage-pill pill-check" id="d-pill">Check</span>
+            <span style="font-size:12px;color:var(--text3)">Matter <strong id="d-id">M001</strong></span>
+            <span class="company-badge cb-liberty" id="d-company-badge">Liberty</span>
+            <span class="stat-tag tag-amber" style="margin-left:auto">KYC review</span>
+            <!-- CALL BUTTON -->
+            <button class="call-btn" id="call-btn" onclick="initiateCall()">📞 Call client</button>
+          </div>
+          <div class="matter-title" id="d-name">Smith Family SMSF</div>
+          <div class="matter-meta" id="d-client">John &amp; Mary Smith · john@smithfamily.com.au · 0412 345 678</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px">
+            <div class="progress-track" style="flex:1;max-width:480px" id="d-progress"></div>
+            <div style="display:flex;gap:8px;margin-left:16px">
+              <button class="btn btn-outline btn-sm" onclick="advanceStage()">Advance →</button>
+              <button class="btn btn-filled btn-sm" onclick="approveMatter()">Approve</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STAGE OWNERSHIP STRIP -->
+        <div class="ownership-strip" id="ownership-strip">
+          <div class="ownership-card completed-stage">
+            <div class="oc-avatar" style="background:#3b82f6">SC</div>
+            <div class="oc-info"><div class="oc-stage">Start</div><div class="oc-name">Sarah Chen</div><div class="oc-status" style="color:var(--green)">✓ Completed</div></div>
+          </div>
+          <div class="ownership-card completed-stage">
+            <div class="oc-avatar" style="background:#7c3aed">EW</div>
+            <div class="oc-info"><div class="oc-stage">Prepare</div><div class="oc-name">Emma Wilson</div><div class="oc-status" style="color:var(--green)">✓ Completed</div></div>
+          </div>
+          <div class="ownership-card active-stage">
+            <div class="oc-avatar" style="background:#059669">MT</div>
+            <div class="oc-info"><div class="oc-stage">Check</div><div class="oc-name">Michael Torres</div><div class="oc-status" style="color:var(--orange)">● Active</div></div>
+          </div>
+          <div class="ownership-card">
+            <div class="oc-avatar" style="background:#dc2626">RP</div>
+            <div class="oc-info"><div class="oc-stage">Lodge</div><div class="oc-name">Rachel Park</div><div class="oc-status">Pending</div></div>
+          </div>
+          <div class="ownership-card">
+            <div class="oc-avatar" style="background:var(--orange)">SC</div>
+            <div class="oc-info"><div class="oc-stage">Active</div><div class="oc-name">Sarah Chen</div><div class="oc-status">Pending</div></div>
+          </div>
+        </div>
+
+        <div class="matter-tabs">
+          <div class="mtab active" onclick="showTab('overview',this)">Overview</div>
+          <div class="mtab" onclick="showTab('tasks',this)">Tasks <span class="stat-tag tag-amber" style="font-size:10px;padding:1px 5px;margin-left:2px">3</span></div>
+          <div class="mtab" onclick="showTab('documents',this)">Documents</div>
+          <div class="mtab" onclick="showTab('filenotes',this)">File Notes <span class="stat-tag tag-purple" style="font-size:10px;padding:1px 5px;margin-left:2px">2 drafts</span></div>
+          <div class="mtab" onclick="showTab('kyc-tab',this)">KYC</div>
+          <div class="mtab" onclick="showTab('messages-tab',this)">Messages</div>
+          <div class="mtab" onclick="showTab('timeline-tab',this)">Timeline</div>
+          <div class="mtab" onclick="showTab('lodgement-tab',this)">Lodgement</div>
+        </div>
+
+        <div class="matter-grid">
+          <div>
+            <!-- OVERVIEW TAB -->
+            <div class="tab-pane active" id="tab-overview">
+              <div class="card" style="margin-bottom:12px"><div class="card-header"><div class="card-title">Entity details</div></div>
+                <div style="padding:14px 18px">
+                  <div class="field-row"><div class="field-label">SMSF name</div><div class="field-value">Smith Family Superannuation Fund</div></div>
+                  <div class="field-row"><div class="field-label">ABN</div><div class="field-value">12 345 678 901</div></div>
+                  <div class="field-row"><div class="field-label">Trustee type</div><div class="field-value">Individual trustees</div></div>
+                  <div class="field-row"><div class="field-label">Members</div><div class="field-value">John Smith, Mary Smith</div></div>
+                  <div class="field-row"><div class="field-label">Package</div><div class="field-value">Default + Accounting — $999/yr</div></div>
+                  <div class="field-row"><div class="field-label">Company group</div><div class="field-value"><span class="company-badge cb-liberty">Liberty</span></div></div>
+                  <div class="field-row"><div class="field-label">Referrer</div><div class="field-value">Sarah Lane</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TASKS TAB -->
+            <div class="tab-pane" id="tab-tasks">
+              <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-outline btn-sm" onclick="addTask()">+ Add task</button></div>
+              <div id="tasks-list">
+                <div class="task-item"><div class="task-check done" onclick="toggleTask(this)"></div><div><div class="task-name">Collect signed trust deed</div><div class="task-meta">Completed 18 Mar · Emma Wilson</div></div></div>
+                <div class="task-item"><div class="task-check done" onclick="toggleTask(this)"></div><div><div class="task-name">Verify member TFN declarations</div><div class="task-meta">Completed 19 Mar · Emma Wilson</div></div></div>
+                <div class="task-item"><div class="task-check" onclick="toggleTask(this)"></div><div><div class="task-name">Complete KYC for Mary Smith</div><div class="task-meta">Due 22 Mar · Michael Torres · <span style="color:var(--red);font-weight:600">Overdue</span></div></div></div>
+                <div class="task-item"><div class="task-check" onclick="toggleTask(this)"></div><div><div class="task-name">ATO registration preparation</div><div class="task-meta">Due 25 Mar · Michael Torres</div></div></div>
+              </div>
+            </div>
+
+            <!-- DOCUMENTS TAB — with year + type tabs -->
+            <div class="tab-pane" id="tab-documents">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                <div class="year-tabs">
+                  <div class="year-tab active" onclick="switchYear('FY2026',this)">FY2026</div>
+                  <div class="year-tab" onclick="switchYear('FY2025',this)">FY2025</div>
+                  <div class="year-tab" onclick="switchYear('FY2024',this)">FY2024</div>
+                  <div class="year-tab" onclick="switchYear('All',this)">All years</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="openModal('upload-doc-modal')">↑ Upload</button>
+              </div>
+              <div id="docs-year-content">
+                <div class="doc-type-section">
+                  <div class="doc-type-label">Trust Deed &amp; Establishment <span style="font-size:11px;color:var(--text3)">1 file</span></div>
+                  <div class="doc-item"><div class="doc-icon">📋</div><div><div class="doc-name">Smith_Family_SMSF_Trust_Deed.pdf</div><div class="doc-meta">FY2026 · 2.1 MB · 18 Mar 2026 · E. Wilson</div></div><button class="btn btn-xs btn-outline" style="margin-left:auto" onclick="openSignModal('Trust Deed')">Sign</button></div>
+                </div>
+                <div class="doc-type-section">
+                  <div class="doc-type-label">KYC / Identity <span style="font-size:11px;color:var(--text3)">2 files</span></div>
+                  <div class="doc-item"><div class="doc-icon">🪪</div><div><div class="doc-name">John_Smith_Passport.pdf</div><div class="doc-meta">FY2026 · 890 KB · 19 Mar 2026 · KYC system</div></div><span class="stat-tag tag-green" style="margin-left:auto">✓ Verified</span></div>
+                  <div class="doc-item"><div class="doc-icon">🪪</div><div><div class="doc-name">Mary_Smith_ID.pdf</div><div class="doc-meta">FY2026 · 1.2 MB · 20 Mar 2026 · E. Wilson</div></div><span class="stat-tag tag-amber" style="margin-left:auto">Pending</span></div>
+                </div>
+                <div class="doc-type-section">
+                  <div class="doc-type-label">ATO Correspondence <span style="font-size:11px;color:var(--text3)">0 files</span></div>
+                  <div style="font-size:13px;color:var(--text3);padding:12px 0">No ATO documents yet for FY2026</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FILE NOTES TAB -->
+            <div class="tab-pane" id="tab-filenotes">
+              <div class="fn-filters">
+                <select class="filter-select"><option>All types</option><option>Call</option><option>Email</option><option>Meeting</option><option>Internal</option><option>System</option></select>
+                <select class="filter-select"><option>All staff</option><option>Emma Wilson</option><option>Michael Torres</option><option>Sarah Chen</option></select>
+                <input type="date" class="form-input" style="width:150px;padding:7px 10px">
+                <button class="btn btn-outline btn-sm" onclick="openModal('new-filenote-modal')">+ Add note</button>
+              </div>
+              <div id="filenotes-list">
+                <!-- DRAFT call note from Echo Notes -->
+                <div class="fn-item">
+                  <div class="fn-header">
+                    <div class="fn-type-icon" style="background:#fdf4ff">📞</div>
+                    <div class="fn-meta">
+                      <div class="fn-subject">Outbound call — Trust deed discussion</div>
+                      <div class="fn-submeta">Today 10:32am · Emma Wilson · 3CX · 8 min 14 sec</div>
+                    </div>
+                    <span class="fn-draft">⏳ Draft — pending approval</span>
+                  </div>
+                  <div class="fn-body">Discussed trust deed requirements with John Smith. Client confirmed they have a copy of original deed from 2018. Will scan and upload by Thursday. Also noted that Mary Smith is overseas until 24 March — KYC to be completed on return. Client asked about investment strategy options for ETFs.</div>
+                  <div class="fn-tags"><span class="fn-tag">trust deed</span><span class="fn-tag">kyc delay</span><span class="fn-tag">etf</span></div>
+                  <div style="padding-left:42px;margin-top:10px;display:flex;gap:8px">
+                    <button class="btn btn-green btn-xs" onclick="approveFileNote(this)">✓ Approve &amp; publish</button>
+                    <button class="btn btn-outline btn-xs" onclick="openModal('edit-filenote-modal')">Edit note</button>
+                    <span style="font-size:11px;color:var(--text3);margin-left:4px;align-self:center">Via Echo Notes · BizGPT ref #EN-2847</span>
+                  </div>
+                </div>
+                <!-- System note -->
+                <div class="fn-item">
+                  <div class="fn-header">
+                    <div class="fn-type-icon" style="background:#f0fdf4">🔄</div>
+                    <div class="fn-meta">
+                      <div class="fn-subject">Stage advanced: Prepare → Check</div>
+                      <div class="fn-submeta">19 Mar 2026 · System · Auto-generated</div>
+                    </div>
+                  </div>
+                  <div class="fn-body">Matter advanced from Prepare to Check stage. Outgoing custodian: Emma Wilson (Bookkeeper). Incoming custodian: Michael Torres (Compliance) — accepted 19 Mar 14:22.</div>
+                </div>
+                <!-- Manual note -->
+                <div class="fn-item pinned">
+                  <div class="fn-header">
+                    <div class="fn-type-icon" style="background:#fff7ed">📝</div>
+                    <div class="fn-meta">
+                      <div class="fn-subject" style="display:flex;align-items:center;gap:6px">Compliance review notes <span style="font-size:11px;color:var(--amber)">📌 Pinned</span></div>
+                      <div class="fn-submeta">20 Mar 2026 · Michael Torres · Internal</div>
+                    </div>
+                  </div>
+                  <div class="fn-body">Trust deed reviewed and verified against SMSF establishment checklist. ABN confirmed. Both members on deed. Corporate trustee not required. Main outstanding: Mary Smith KYC — adverse media check still running. Do not advance to Lodge until resolved.</div>
+                  <div class="fn-tags"><span class="fn-tag">compliance</span><span class="fn-tag">kyc</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- KYC TAB -->
+            <div class="tab-pane" id="tab-kyc-tab">
+              <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+                <button class="btn btn-outline btn-sm" onclick="openModal('send-kyc-modal')">Send KYC link</button>
+              </div>
+              <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                  <div style="font-size:13px;font-weight:600">John Smith</div>
+                  <span class="kyc-status ks-pass" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:var(--green-light);color:var(--green)">✓ Passed</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div style="padding:8px 10px;border:1px solid var(--border);border-radius:6px"><div style="font-size:11px;color:var(--text2);margin-bottom:2px">Identity check</div><div style="font-size:12px;font-weight:700;color:var(--green)">Pass</div></div>
+                  <div style="padding:8px 10px;border:1px solid var(--border);border-radius:6px"><div style="font-size:11px;color:var(--text2);margin-bottom:2px">Liveness check</div><div style="font-size:12px;font-weight:700;color:var(--green)">Pass</div></div>
+                  <div style="padding:8px 10px;border:1px solid var(--border);border-radius:6px"><div style="font-size:11px;color:var(--text2);margin-bottom:2px">Adverse media</div><div style="font-size:12px;font-weight:700;color:var(--green)">Clear</div></div>
+                  <div style="padding:8px 10px;border:1px solid var(--border);border-radius:6px"><div style="font-size:11px;color:var(--text2);margin-bottom:2px">Completed</div><div style="font-size:12px;font-weight:700;color:var(--dark)">20 Mar 2026</div></div>
+                </div>
+              </div>
+              <div style="background:white;border:1.5px solid var(--amber);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                  <div style="font-size:13px;font-weight:600">Mary Smith</div>
+                  <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:var(--amber-light);color:var(--amber)">⏳ In progress</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div style="padding:8px 10px;border:1px solid var(--border);border-radius:6px"><div style="font-size:11px;color:var(--text2);margin-bottom:2px">Identity check</div><div style="font-size:12px;font-weight:700;color:var(--green)">Pass</div></div>
+                  <div style="padding:8px 10px;border:1px solid var(--border);border-radius:6px"><div style="font-size:11px;color:var(--text2);margin-bottom:2px">Liveness check</div><div style="font-size:12px;font-weight:700;color:var(--green)">Pass</div></div>
+                  <div style="padding:8px 10px;border:1px solid var(--amber);border-radius:6px;background:var(--amber-light)"><div style="font-size:11px;color:var(--amber);margin-bottom:2px">Adverse media</div><div style="font-size:12px;font-weight:700;color:var(--amber)">Running…</div></div>
+                  <div style="padding:8px 10px;border:1px solid var(--border);border-radius:6px"><div style="font-size:11px;color:var(--text2);margin-bottom:2px">Started</div><div style="font-size:12px;font-weight:700;color:var(--dark)">20 Mar 2026</div></div>
+                </div>
+                <div style="margin-top:10px;display:flex;gap:8px">
+                  <button class="btn btn-green btn-xs" onclick="approveKYC(this)">✓ Approve KYC</button>
+                  <button class="btn btn-outline btn-xs" onclick="requestKYCInfo()">Request info</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- MESSAGES TAB -->
+            <div class="tab-pane" id="tab-messages-tab">
+              <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Internal messaging — connected to Emma Wilson's email (emma@aap.com.au)</div>
+              <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px">
+                <div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between">
+                  <div style="font-size:13px;font-weight:600">Thread: Trust deed &amp; KYC — Smith Family</div>
+                  <span style="font-size:11px;color:var(--text3)">3 messages</span>
+                </div>
+                <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+                  <div style="display:flex;gap:10px">
+                    <div class="user-avatar" style="background:#7c3aed;width:30px;height:30px;font-size:11px;flex-shrink:0">EW</div>
+                    <div style="background:var(--surface);border-radius:0 var(--radius-sm) var(--radius-sm) var(--radius-sm);padding:10px 14px;flex:1"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Emma Wilson · 18 Mar 2:14pm</div><div style="font-size:13px">Hi John, could you please forward your original trust deed document? We need the 2018 signed version for our records.</div></div>
+                  </div>
+                  <div style="display:flex;gap:10px;justify-content:flex-end">
+                    <div style="background:#e8591a;color:white;border-radius:var(--radius-sm) 0 var(--radius-sm) var(--radius-sm);padding:10px 14px;max-width:70%"><div style="font-size:11px;opacity:.75;margin-bottom:4px">John Smith · 18 Mar 4:01pm</div><div style="font-size:13px">Hi Emma, I've found it in storage. Will scan tonight and email through.</div></div>
+                    <div class="user-avatar" style="background:#1d4ed8;width:30px;height:30px;font-size:11px;flex-shrink:0">JS</div>
+                  </div>
+                  <div style="display:flex;gap:10px">
+                    <div class="user-avatar" style="background:#7c3aed;width:30px;height:30px;font-size:11px;flex-shrink:0">EW</div>
+                    <div style="background:var(--surface);border-radius:0 var(--radius-sm) var(--radius-sm) var(--radius-sm);padding:10px 14px;flex:1"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Emma Wilson · 19 Mar 9:03am</div><div style="font-size:13px">Thanks John! Document received and uploaded. Mary's KYC link has been sent to her email — please ask her to complete it at her earliest convenience.</div></div>
+                  </div>
+                </div>
+                <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px">
+                  <input class="form-input" placeholder="Type a message…" style="flex:1">
+                  <button class="btn btn-filled btn-sm" onclick="sendMessage()">Send</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- TIMELINE TAB -->
+            <div class="tab-pane" id="tab-timeline-tab">
+              <div style="padding:0">
+                <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--surface2)"><div style="width:30px;height:30px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">✓</div><div><div style="font-size:13px;color:var(--dark)">KYC passed — John Smith</div><div style="font-size:11px;color:var(--text3)">Today 10:42am · Michael Torres</div></div></div>
+                <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--surface2)"><div style="width:30px;height:30px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🔄</div><div><div style="font-size:13px;color:var(--dark)">Stage advanced: Prepare → Check · Handoff accepted by Michael Torres</div><div style="font-size:11px;color:var(--text3)">19 Mar 2:22pm · Auto</div></div></div>
+                <div style="display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--surface2)"><div style="width:30px;height:30px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</div><div><div style="font-size:13px;color:var(--dark)">Document uploaded — Trust Deed</div><div style="font-size:11px;color:var(--text3)">18 Mar 4:15pm · Emma Wilson</div></div></div>
+                <div style="display:flex;gap:10px;padding:11px 0"><div style="width:30px;height:30px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🆕</div><div><div style="font-size:13px;color:var(--dark)">Matter created · Onboarding complete</div><div style="font-size:11px;color:var(--text3)">15 Mar 9:00am · John Smith (Client)</div></div></div>
+              </div>
+            </div>
+
+            <!-- LODGEMENT TAB -->
+            <div class="tab-pane" id="tab-lodgement-tab">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div style="background:white;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px"><div style="font-size:13px;font-weight:700;margin-bottom:10px">ASIC Registration</div><div class="field-row"><div class="field-label">Status</div><div class="field-value" style="color:var(--amber)">Not yet started</div></div><div class="field-row"><div class="field-label">Assigned to</div><div class="field-value">Rachel Park (Lodge stage)</div></div><button class="btn btn-filled btn-sm" style="margin-top:12px;width:100%;justify-content:center" onclick="mockLodge()">Submit ASIC (mock)</button></div>
+                <div style="background:white;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px"><div style="font-size:13px;font-weight:700;margin-bottom:10px">ATO Registration</div><div class="field-row"><div class="field-label">Status</div><div class="field-value" style="color:var(--amber)">Blocked — KYC required</div></div><div class="field-row"><div class="field-label">Est. lodge date</div><div class="field-value">25 Mar 2026</div></div><button class="btn btn-filled btn-sm" style="margin-top:12px;width:100%;justify-content:center" onclick="mockLodge()">Submit ATO (mock)</button></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT SIDEBAR -->
+          <div>
+            <div class="card" style="margin-bottom:12px">
+              <div class="card-header"><div class="card-title">SLA &amp; timeline</div></div>
+              <div style="padding:14px 18px">
+                <div class="field-row"><div class="field-label">Matter opened</div><div class="field-value">15 Mar 2026</div></div>
+                <div class="field-row"><div class="field-label">Days in stage</div><div class="field-value" style="color:var(--amber)">7 days</div></div>
+                <div class="field-row"><div class="field-label">Target lodge</div><div class="field-value">28 Mar 2026</div></div>
+                <div class="field-row"><div class="field-label">Package</div><div class="field-value">Default + Accounting</div></div>
+              </div>
+            </div>
+            <!-- QUICK ACTIONS -->
+            <div class="card">
+              <div class="card-header"><div class="card-title">Quick actions</div></div>
+              <div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">
+                <button class="btn btn-outline btn-sm" style="justify-content:flex-start;width:100%" onclick="openModal('upload-doc-modal')">↑ Upload document</button>
+                <button class="btn btn-outline btn-sm" style="justify-content:flex-start;width:100%" onclick="openModal('send-kyc-modal')">🪪 Send KYC link</button>
+                <button class="btn btn-outline btn-sm" style="justify-content:flex-start;width:100%" onclick="openModal('message-modal')">✉ Message client</button>
+                <button class="btn btn-outline btn-sm" style="justify-content:flex-start;width:100%" onclick="openModal('new-filenote-modal')">📝 Add file note</button>
+                <button class="btn btn-outline btn-sm" style="justify-content:flex-start;width:100%" onclick="openModal('reassign-modal')">👤 Reassign</button>
+                <button class="btn btn-outline btn-sm" style="justify-content:flex-start;width:100%" onclick="openModal('staff-profile-modal')">👋 View team profiles</button>
+                <button class="btn btn-outline btn-sm" style="justify-content:flex-start;width:100%;color:var(--orange);border-color:var(--orange-border)" onclick="advanceStage()">→ Advance stage</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- QUEUES, KYC, STAFF, NOTIF, AUDIT -->
+      <div class="panel" id="panel-preparation">
+        <div style="margin-bottom:14px;font-size:13px;color:var(--text2)">Matters in preparation — bookkeeper work in progress.</div>
+        <div class="queue-item" onclick="openMatter('M004')"><div class="q-priority q-high"></div><div class="q-body"><div class="q-title">Brown Family Super — KYC not started</div><div class="q-sub">New SMSF · Emma Wilson · No documents yet</div><div class="q-meta">Due 28 Mar · <span style="color:var(--red)">Action required</span></div></div><button class="btn btn-filled btn-sm" onclick="event.stopPropagation();openMatter('M004')">Open</button></div>
+        <div class="queue-item" onclick="openMatter('M002')"><div class="q-priority q-med"></div><div class="q-body"><div class="q-title">Johnson Retirement Fund — awaiting trust deed</div><div class="q-sub">Existing Onboarding · Emma Wilson · Rollover statement outstanding</div><div class="q-meta">Due 25 Mar</div></div><button class="btn btn-filled btn-sm" onclick="event.stopPropagation();openMatter('M002')">Open</button></div>
+        <div class="queue-item" onclick="openMatter('M007')"><div class="q-priority q-med"></div><div class="q-body"><div class="q-title">Nguyen SMSF — draft setup pack in progress</div><div class="q-sub">New SMSF · Corporate trustee · ASIC search pending</div><div class="q-meta">Emma Wilson · Due 26 Mar</div></div><button class="btn btn-filled btn-sm" onclick="event.stopPropagation()">Open</button></div>
+        <div class="queue-item"><div class="q-priority q-low"></div><div class="q-body"><div class="q-title">Patel Family Super — takeover pack</div><div class="q-sub">Existing Onboarding · Previous admin documents being collected</div><div class="q-meta">Emma Wilson · Due 30 Mar</div></div><button class="btn btn-filled btn-sm" onclick="event.stopPropagation()">Open</button></div>
+      </div>
+
+      <div class="panel" id="panel-compliance">
+        <div class="queue-item" onclick="openMatter('M001')"><div class="q-priority q-high"></div><div class="q-body"><div class="q-title">Smith Family SMSF — KYC pending</div><div class="q-sub">Mary Smith adverse media check running</div><div class="q-meta">M. Torres · Due 22 Mar · <span style="color:var(--red)">Overdue 1 day</span></div></div><button class="btn btn-filled btn-sm" onclick="event.stopPropagation();openMatter('M001')">Review</button></div>
+        <div class="queue-item" onclick="openMatter('M006')"><div class="q-priority q-med"></div><div class="q-body"><div class="q-title">Davis Investment Fund — adverse media flag</div><div class="q-sub">Manual compliance review required</div><div class="q-meta">S. Chen · Due 24 Mar</div></div><button class="btn btn-filled btn-sm" onclick="event.stopPropagation();openMatter('M006')">Review</button></div>
+        <div class="queue-item"><div class="q-priority q-low"></div><div class="q-body"><div class="q-title">Lee Family Super — completeness check</div><div class="q-sub">Member consent form missing</div><div class="q-meta">M. Torres · Due 26 Mar</div></div><button class="btn btn-filled btn-sm" onclick="event.stopPropagation()">Review</button></div>
+      </div>
+
+      <div class="panel" id="panel-lodgement">
+        <div class="queue-item" onclick="openMatter('M003')"><div class="q-priority q-high"></div><div class="q-body"><div class="q-title">Williams Corp Trustee — ASIC submission</div><div class="q-sub">Form 201 prepared · Registered agent verified</div><div class="q-meta">Approved: M. Torres · Ready to lodge</div></div><button class="btn btn-filled btn-sm" onclick="event.stopPropagation();mockLodge()">Lodge (mock)</button></div>
+        <div class="queue-item"><div class="q-priority q-med"></div><div class="q-body"><div class="q-title">Thompson SMSF — ATO registration</div><div class="q-sub">All KYC passed · Trust deed verified</div><div class="q-meta">Approved: S. Chen · Due 28 Mar</div></div><button class="btn btn-filled btn-sm" onclick="event.stopPropagation();mockLodge()">Lodge (mock)</button></div>
+      </div>
+
+      <div class="panel" id="panel-kyc">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+          <div class="stat-card"><div class="stat-label">Active verifications</div><div class="stat-value">8</div></div>
+          <div class="stat-card"><div class="stat-label">Passed this month</div><div class="stat-value">14</div></div>
+          <div class="stat-card"><div class="stat-label">Needs review</div><div class="stat-value" style="color:var(--red)">2</div></div>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-header"><div class="card-title">Provider registry</div><button class="btn btn-outline btn-xs" onclick="openModal('kyc-provider-modal')">+ Add provider</button></div>
+          <div>
+            <div class="user-row"><div class="user-avatar" style="background:var(--orange);width:34px;height:34px;font-size:14px">🔐</div><div class="user-info" style="flex:1"><div class="user-name2">AAP Native KYC</div><div style="font-size:11px;color:var(--text3)">Built-in · identity + liveness + adverse media</div></div><span class="stat-tag tag-green">Active</span></div>
+            <div class="user-row"><div class="user-avatar" style="background:#dbeafe;width:34px;height:34px;font-size:14px">🔗</div><div class="user-info" style="flex:1"><div class="user-name2">External Provider (mocked)</div><div style="font-size:11px;color:var(--text3)">API callback · cryptographic validation</div></div><span class="stat-tag tag-gray">Configured</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Recent verifications</div></div>
+          <table class="table"><thead><tr><th>Subject</th><th>Matter</th><th>Provider</th><th>Result</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>John Smith</td><td>M001</td><td>AAP Native</td><td><span class="stat-tag tag-green">Pass</span></td><td><button class="btn btn-xs btn-outline">View</button></td></tr>
+            <tr><td>Mary Smith</td><td>M001</td><td>AAP Native</td><td><span class="stat-tag tag-amber">In progress</span></td><td><button class="btn btn-xs btn-outline" onclick="approveKYC(this)">Approve</button></td></tr>
+            <tr><td>Robert Johnson</td><td>M002</td><td>AAP Native</td><td><span class="stat-tag tag-green">Pass</span></td><td><button class="btn btn-xs btn-outline">View</button></td></tr>
+            <tr><td>Mark Davis</td><td>M006</td><td>AAP Native</td><td><span class="stat-tag tag-red">Review</span></td><td><button class="btn btn-xs btn-outline" onclick="requestKYCInfo()">Review</button></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <!-- STAFF PROFILES -->
+      <div class="panel" id="panel-users">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn btn-filled btn-sm" onclick="inviteUser()">+ Invite staff</button></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+          <div class="staff-profile-card" onclick="openModal('staff-profile-modal')">
+            <div class="spc-avatar" style="background:var(--orange-light);color:var(--orange)">SC</div>
+            <div class="spc-name">Sarah Chen</div>
+            <div class="spc-role">Master Owner</div>
+            <div class="spc-exp">15 years of experience in SMSF administration</div>
+            <div class="spc-facts">
+              <div class="spc-fact-row"><span class="spc-fact-icon">🏄</span><span>Hobbies: surfing, hiking, cooking</span></div>
+              <div class="spc-fact-row"><span class="spc-fact-icon">🐕</span><span>Dogs: Max (golden retriever)</span></div>
+              <div class="spc-fact-row"><span class="spc-fact-icon">📧</span><span>sarah@aap.com.au</span></div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="width:100%;justify-content:center">Edit profile</button>
+          </div>
+          <div class="staff-profile-card" onclick="openModal('staff-profile-modal')">
+            <div class="spc-avatar" style="background:#f3e8ff;color:#7c3aed">EW</div>
+            <div class="spc-name">Emma Wilson</div>
+            <div class="spc-role">Bookkeeper</div>
+            <div class="spc-exp">10 years of experience in bookkeeping &amp; SMSF</div>
+            <div class="spc-facts">
+              <div class="spc-fact-row"><span class="spc-fact-icon">🌊</span><span>Hobbies: surfing, swimming</span></div>
+              <div class="spc-fact-row"><span class="spc-fact-icon">🐕</span><span>Dogs: Rusty and Pablo</span></div>
+              <div class="spc-fact-row"><span class="spc-fact-icon">📧</span><span>emma@aap.com.au</span></div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="width:100%;justify-content:center">Edit profile</button>
+          </div>
+          <div class="staff-profile-card" onclick="openModal('staff-profile-modal')">
+            <div class="spc-avatar" style="background:#f0fdf4;color:var(--green)">MT</div>
+            <div class="spc-name">Michael Torres</div>
+            <div class="spc-role">Compliance Officer</div>
+            <div class="spc-exp">12 years in compliance &amp; SMSF regulation</div>
+            <div class="spc-facts">
+              <div class="spc-fact-row"><span class="spc-fact-icon">⚽</span><span>Hobbies: football, cycling</span></div>
+              <div class="spc-fact-row"><span class="spc-fact-icon">☕</span><span>Coffee enthusiast</span></div>
+              <div class="spc-fact-row"><span class="spc-fact-icon">📧</span><span>michael@aap.com.au</span></div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="width:100%;justify-content:center">Edit profile</button>
+          </div>
+          <div class="staff-profile-card">
+            <div class="spc-avatar" style="background:#fee2e2;color:var(--red)">RP</div>
+            <div class="spc-name">Rachel Park</div>
+            <div class="spc-role">Tax Agent (Registered)</div>
+            <div class="spc-exp">8 years as registered tax agent</div>
+            <div class="spc-facts">
+              <div class="spc-fact-row"><span class="spc-fact-icon">🎨</span><span>Hobbies: art, photography</span></div>
+              <div class="spc-fact-row"><span class="spc-fact-icon">🐱</span><span>Cats: Miso &amp; Tofu</span></div>
+              <div class="spc-fact-row"><span class="spc-fact-icon">📧</span><span>rachel@aap.com.au</span></div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="width:100%;justify-content:center">Edit profile</button>
+          </div>
+        </div>
+
+        <!-- ADMIN: DEFAULT STAGE ASSIGNMENTS -->
+        <div style="margin-top:28px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--dark)">Default stage assignments</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:2px">These defaults are applied to every new matter. You can override per-matter from the matter detail → Reassign.</div>
+            </div>
+            <button class="btn btn-filled btn-sm" onclick="saveDefaultAssignments()">Save defaults</button>
+          </div>
+          <div class="assign-stage-grid">
+            <div class="assign-stage-card">
+              <div class="stage-name" style="color:#1d4ed8">▶ Start</div>
+              <select class="form-select" id="default-assign-start" style="padding:7px 8px;font-size:12px">
+                <option value="sarah" selected>Sarah Chen</option><option value="emma">Emma Wilson</option><option value="michael">Michael Torres</option><option value="rachel">Rachel Park</option>
+              </select>
+            </div>
+            <div class="assign-stage-card">
+              <div class="stage-name" style="color:#7e22ce">▶ Prepare</div>
+              <select class="form-select" id="default-assign-prepare" style="padding:7px 8px;font-size:12px">
+                <option value="emma" selected>Emma Wilson</option><option value="sarah">Sarah Chen</option><option value="michael">Michael Torres</option><option value="rachel">Rachel Park</option>
+              </select>
+            </div>
+            <div class="assign-stage-card">
+              <div class="stage-name" style="color:#c2410c">▶ Check</div>
+              <select class="form-select" id="default-assign-check" style="padding:7px 8px;font-size:12px">
+                <option value="michael" selected>Michael Torres</option><option value="sarah">Sarah Chen</option><option value="emma">Emma Wilson</option>
+              </select>
+            </div>
+            <div class="assign-stage-card">
+              <div class="stage-name" style="color:#854d0e">▶ Lodge</div>
+              <select class="form-select" id="default-assign-lodge" style="padding:7px 8px;font-size:12px">
+                <option value="rachel" selected>Rachel Park</option><option value="sarah">Sarah Chen</option>
+              </select>
+            </div>
+            <div class="assign-stage-card">
+              <div class="stage-name" style="color:#15803d">▶ Active</div>
+              <select class="form-select" id="default-assign-active" style="padding:7px 8px;font-size:12px">
+                <option value="sarah" selected>Sarah Chen</option><option value="emma">Emma Wilson</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:10px;padding:12px 14px;background:var(--blue-light);border-radius:var(--radius-sm);font-size:12px;color:#1d4ed8">
+            💡 Staff are notified when a matter enters their stage and must accept custody before it's considered active. Per-matter overrides can be set from any matter's Reassign option.
+          </div>
+        </div>
+
+        </div>
+      </div>
+
+      <div class="panel" id="panel-notifications">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Notifications</div><button class="btn btn-outline btn-xs" onclick="markAllRead()">Mark all read</button></div>
+          <div style="padding:0 18px">
+            <div class="notif-item"><div class="notif-dot"></div><div><div style="font-size:13px"><strong>Handoff pending</strong> — Williams Corp Trustee awaiting Rachel Park acceptance (Lodge)</div><div style="font-size:11px;color:var(--text3);margin-top:2px">15 minutes ago</div></div></div>
+            <div class="notif-item"><div class="notif-dot"></div><div><div style="font-size:13px"><strong>Call note draft ready</strong> — Johnson Retirement Fund · Echo Notes · BizGPT ref #EN-2847</div><div style="font-size:11px;color:var(--text3);margin-top:2px">22 minutes ago</div></div></div>
+            <div class="notif-item"><div class="notif-dot"></div><div><div style="font-size:13px"><strong>KYC passed</strong> — John Smith identity verified · Smith Family SMSF</div><div style="font-size:11px;color:var(--text3);margin-top:2px">1 hour ago</div></div></div>
+            <div class="notif-item"><div class="notif-dot read"></div><div><div style="font-size:13px"><strong>Task overdue</strong> — Mary Smith KYC was due 22 March</div><div style="font-size:11px;color:var(--text3);margin-top:2px">1 hour ago</div></div></div>
+            <div class="notif-item"><div class="notif-dot read"></div><div><div style="font-size:13px"><strong>Stage advanced</strong> — Williams Corp Trustee → Lodge</div><div style="font-size:11px;color:var(--text3);margin-top:2px">2 days ago</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-auditlog">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Audit log</div><span style="font-size:12px;color:var(--text3)">Immutable record</span></div>
+          <div class="log-row log-header" style="background:var(--surface);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)"><span>Timestamp</span><span>User</span><span>Action &amp; details</span><span>Entity</span></div>
+          <div class="log-row"><span class="log-ts">2026-03-20 10:42</span><span style="font-size:12px">michael@aap</span><span style="font-size:12px"><strong>KYC_APPROVED</strong> — Result: Pass · Provider: AAP Native</span><span style="font-size:12px">John Smith</span></div>
+          <div class="log-row"><span class="log-ts">2026-03-20 09:15</span><span style="font-size:12px">emma@aap</span><span style="font-size:12px"><strong>CALL_INITIATED</strong> — 3CX ref #CX-4421 · Duration 8:14</span><span style="font-size:12px">M001</span></div>
+          <div class="log-row"><span class="log-ts">2026-03-20 09:38</span><span style="font-size:12px">echo.notes</span><span style="font-size:12px"><strong>CALL_NOTE_RECEIVED</strong> — Echo Notes #EN-2847 · Draft created</span><span style="font-size:12px">M001</span></div>
+          <div class="log-row"><span class="log-ts">2026-03-19 16:22</span><span style="font-size:12px">emma@aap</span><span style="font-size:12px"><strong>STAGE_ADVANCE</strong> — Prepare → Check · Handoff to Michael Torres</span><span style="font-size:12px">M001</span></div>
+          <div class="log-row"><span class="log-ts">2026-03-19 14:22</span><span style="font-size:12px">michael@aap</span><span style="font-size:12px"><strong>HANDOFF_ACCEPTED</strong> — Check stage accepted</span><span style="font-size:12px">M001</span></div>
+          <div class="log-row"><span class="log-ts">2026-03-19 09:15</span><span style="font-size:12px">emma@aap</span><span style="font-size:12px"><strong>DOCUMENT_UPLOAD</strong> — Trust_Deed.pdf · Trust Deed category</span><span style="font-size:12px">M001</span></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app-screen -->
+
+
+<!-- ═══ CLIENT PORTAL ═══ -->
+<div id="client-screen" class="screen">
+  <div class="client-sidebar">
+    <div class="sidebar-logo">
+      <svg width="26" height="26" viewBox="0 0 36 36" fill="none"><path d="M18 4C10.268 4 4 10.268 4 18s6.268 14 14 14 14-6.268 14-14S25.732 4 18 4z" fill="#fef3ee" stroke="#e8591a" stroke-width="1.5"/><circle cx="18" cy="18" r="2.5" fill="#e8591a"/></svg>
+      <span class="sidebar-logo-text">My Portal</span>
+    </div>
+    <div style="padding:16px;border-bottom:1px solid var(--border)">
+      <div style="font-size:13px;font-weight:700">John Smith</div>
+      <div style="font-size:11px;color:var(--text3)">Smith Family SMSF</div>
+    </div>
+    <div class="nav-section-label">My SMSF</div>
+    <div class="client-nav-item active" onclick="showClientPanel('cp-overview',this)">📊 My matter</div>
+    <div class="client-nav-item" onclick="showClientPanel('cp-team',this)">👥 My team</div>
+    <div class="client-nav-item" onclick="showClientPanel('cp-actions',this)">✅ Actions <span class="nav-badge" style="font-size:10px">2</span></div>
+    <div class="client-nav-item" onclick="showClientPanel('cp-docs',this)">📁 Documents</div>
+    <div class="client-nav-item" onclick="showClientPanel('cp-messages',this)">💬 Messages</div>
+    <div class="sidebar-bottom">
+      <button onclick="goToStaffLogin()" style="width:100%;text-align:center;font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer">← Staff login</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Smith Family Superannuation Fund</div>
+      <div style="margin-left:auto"><span class="stage-pill pill-check">Check</span></div>
+    </div>
+    <div class="content">
+
+      <!-- CP OVERVIEW -->
+      <div class="client-panel active" id="cp-overview">
+        <div style="background:linear-gradient(135deg,var(--orange) 0%,#c44a0c 100%);border-radius:var(--radius);padding:24px;margin-bottom:16px;color:white">
+          <div style="font-size:12px;opacity:.8;margin-bottom:4px">Matter AAP-2026-0847</div>
+          <div style="font-size:22px;font-weight:800;margin-bottom:4px">Smith Family Superannuation Fund</div>
+          <div style="font-size:13px;opacity:.85;margin-bottom:16px">New SMSF Setup · Default + Accounting · $999/yr</div>
+          <div style="display:flex;gap:6px">
+            <div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.9)"></div>
+            <div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.9)"></div>
+            <div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.5)"></div>
+            <div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.25)"></div>
+            <div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.25)"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;opacity:.7;margin-top:4px"><span>Start</span><span>Prepare</span><span style="font-weight:700">Check ◀</span><span>Lodge</span><span>Active</span></div>
+        </div>
+        <div style="background:var(--amber-light);border:1.5px solid var(--amber);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:20px">⚠️</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--amber)">Action required: Mary Smith KYC pending</div><div style="font-size:12px;color:var(--text2);margin-top:2px">Complete identity verification to avoid lodgement delays. Click Actions above.</div></div>
+          <button class="btn btn-sm" style="background:var(--amber);color:white" onclick="showClientPanel('cp-actions',null)">Complete now →</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Matter progress</div></div>
+          <div style="padding:14px 18px">
+            <div class="field-row"><div class="field-label">ABN</div><div class="field-value">12 345 678 901</div></div>
+            <div class="field-row"><div class="field-label">Members</div><div class="field-value">John Smith, Mary Smith</div></div>
+            <div class="field-row"><div class="field-label">Current stage</div><div class="field-value"><span class="stage-pill pill-check">Check</span></div></div>
+            <div class="field-row"><div class="field-label">Current custodian</div><div class="field-value">Michael Torres (Compliance)</div></div>
+            <div class="field-row"><div class="field-label">Target completion</div><div class="field-value">28 March 2026</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CP TEAM — staff profiles visible to client -->
+      <div class="client-panel" id="cp-team">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">Your Admin Autopilot team</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:20px">The people managing your SMSF. Click any card to send them a message.</div>
+
+        <!-- Emma Wilson — bookkeeper -->
+        <div class="worker-card" style="border:2px solid var(--orange)" onclick="showClientPanel('cp-messages',null)">
+          <div class="wc-photo" style="background:#f3e8ff;color:#7c3aed;font-size:22px;font-weight:800">EW</div>
+          <div class="wc-body">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+              <div class="wc-name">Emma Wilson</div>
+              <span class="stage-pill" style="background:#fdf4ff;color:#7e22ce;font-size:10px">Prepare stage</span>
+            </div>
+            <div class="wc-role">Bookkeeper</div>
+            <div class="wc-bio">Emma has 10 years of experience in SMSF bookkeeping and administration. She handled your file preparation and document collection.</div>
+            <div class="wc-facts">
+              <div class="wc-fact"><span>🌊</span><span>Hobbies: surfing and swimming</span></div>
+              <div class="wc-fact"><span>🐕</span><span>Has 2 dogs — Rusty and Pablo</span></div>
+              <div class="wc-fact"><span>📍</span><span>Based in Sydney, NSW</span></div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();showClientPanel('cp-messages',null)">💬 Message Emma</button>
+          </div>
+        </div>
+
+        <!-- Michael Torres — compliance (current) -->
+        <div class="worker-card" style="border:2px solid var(--green);margin-top:8px" onclick="showClientPanel('cp-messages',null)">
+          <div class="wc-photo" style="background:#f0fdf4;color:var(--green);font-size:22px;font-weight:800">MT</div>
+          <div class="wc-body">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+              <div class="wc-name">Michael Torres</div>
+              <span class="stage-pill pill-check" style="font-size:10px">Check stage ● Current</span>
+            </div>
+            <div class="wc-role" style="color:var(--green)">Compliance Officer — currently managing your file</div>
+            <div class="wc-bio">Michael specialises in SMSF compliance and KYC verification with 12 years of experience. He is currently reviewing your file before it moves to lodgement.</div>
+            <div class="wc-facts">
+              <div class="wc-fact"><span>⚽</span><span>Hobbies: football, cycling</span></div>
+              <div class="wc-fact"><span>☕</span><span>Coffee enthusiast</span></div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();showClientPanel('cp-messages',null)">💬 Message Michael</button>
+              <button class="btn btn-filled btn-sm" onclick="event.stopPropagation();openModal('message-modal')">📞 Request call</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rachel Park — lodge (upcoming) -->
+        <div class="worker-card" style="opacity:.7;margin-top:8px">
+          <div class="wc-photo" style="background:#fee2e2;color:var(--red);font-size:22px;font-weight:800">RP</div>
+          <div class="wc-body">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+              <div class="wc-name">Rachel Park</div>
+              <span class="stage-pill pill-lodge" style="font-size:10px">Lodge stage — upcoming</span>
+            </div>
+            <div class="wc-role" style="color:var(--red)">Registered Tax Agent</div>
+            <div class="wc-bio">Rachel is your registered tax agent and will handle all ATO and ASIC lodgements once the compliance check is complete.</div>
+            <div class="wc-facts">
+              <div class="wc-fact"><span>🎨</span><span>Hobbies: art, photography</span></div>
+              <div class="wc-fact"><span>🐱</span><span>Cats: Miso and Tofu</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CP ACTIONS -->
+      <div class="client-panel" id="cp-actions">
+        <div style="font-size:15px;font-weight:700;margin-bottom:16px">Actions required from you</div>
+        <div style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid var(--amber);border-radius:var(--radius);margin-bottom:12px;background:var(--amber-light)">
+          <div style="width:40px;height:40px;border-radius:var(--radius-sm);background:white;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🪪</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600">Complete KYC — Mary Smith</div><div style="font-size:12px;color:var(--text2);margin-top:2px">Identity verification required. Takes about 5 minutes on your phone.</div></div>
+          <button class="btn btn-sm" style="background:var(--amber);color:white" onclick="openModal('client-kyc-modal')">Start KYC →</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:16px;border:1.5px solid var(--border);border-radius:var(--radius);margin-bottom:12px;background:white">
+          <div style="width:40px;height:40px;border-radius:var(--radius-sm);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">✍️</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600">Sign trust deed acknowledgement</div><div style="font-size:12px;color:var(--text2);margin-top:2px">Review and sign the trust deed establishment confirmation.</div></div>
+          <button class="btn btn-outline btn-sm" onclick="openSignModal('Trust Deed Acknowledgement')">Sign now →</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:16px;border:1.5px solid var(--border);border-radius:var(--radius);margin-bottom:12px;background:white;opacity:.6">
+          <div style="width:40px;height:40px;border-radius:var(--radius-sm);background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">✓</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600">John Smith — KYC complete</div><div style="font-size:12px;color:var(--green);margin-top:2px">Completed 20 March 2026</div></div>
+        </div>
+      </div>
+
+      <!-- CP DOCS -->
+      <div class="client-panel" id="cp-docs">
+        <div style="font-size:15px;font-weight:700;margin-bottom:16px">Your documents</div>
+        <div class="upload-zone" onclick="openModal('upload-doc-modal')">
+          <div style="font-size:24px;margin-bottom:8px">📤</div>
+          <div style="font-size:14px;font-weight:600">Click or drag to upload documents</div>
+          <p>PDF, JPG, PNG — max 20MB</p>
+        </div>
+        <div class="doc-type-section">
+          <div class="doc-type-label">Trust Deed &amp; Establishment</div>
+          <div class="doc-item"><div class="doc-icon">📋</div><div><div class="doc-name">Smith_Family_SMSF_Trust_Deed.pdf</div><div class="doc-meta">2.1 MB · 18 Mar 2026</div></div><button class="btn btn-xs btn-outline" onclick="openSignModal('Trust Deed')" style="margin-left:auto">✍️ Sign</button></div>
+        </div>
+        <div class="doc-type-section">
+          <div class="doc-type-label">KYC / Identity</div>
+          <div class="doc-item"><div class="doc-icon">🪪</div><div><div class="doc-name">John_Smith_Passport.pdf</div><div class="doc-meta">890 KB · Verified ✓</div></div></div>
+        </div>
+      </div>
+
+      <!-- CP MESSAGES -->
+      <div class="client-panel" id="cp-messages">
+        <div style="font-size:15px;font-weight:700;margin-bottom:16px">Messages from your team</div>
+        <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:10px">
+            <div class="user-avatar" style="background:#7c3aed;width:28px;height:28px;font-size:11px">EW</div>
+            <div style="font-size:13px;font-weight:600">Emma Wilson &amp; your team</div>
+          </div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;gap:10px">
+              <div class="user-avatar" style="background:#7c3aed;width:28px;height:28px;font-size:11px;flex-shrink:0">EW</div>
+              <div style="background:var(--surface);border-radius:0 var(--radius-sm) var(--radius-sm) var(--radius-sm);padding:10px 14px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Emma Wilson · 18 Mar 2:14pm</div><div style="font-size:13px">Hi John! Your trust deed has been received and uploaded. Mary's KYC link has been sent to her — please ask her to complete it at her earliest convenience. Let me know if you have any questions.</div></div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+              <div style="background:var(--orange);color:white;border-radius:var(--radius-sm) 0 var(--radius-sm) var(--radius-sm);padding:10px 14px;max-width:70%"><div style="font-size:11px;opacity:.75;margin-bottom:4px">John Smith · 18 Mar 4:01pm</div><div style="font-size:13px">Thanks Emma! Will let Mary know. She's back on the 24th so will complete it then.</div></div>
+              <div class="user-avatar" style="background:#1d4ed8;width:28px;height:28px;font-size:11px;flex-shrink:0">JS</div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <div class="user-avatar" style="background:#059669;width:28px;height:28px;font-size:11px;flex-shrink:0">MT</div>
+              <div style="background:var(--surface);border-radius:0 var(--radius-sm) var(--radius-sm) var(--radius-sm);padding:10px 14px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Michael Torres · Today 9:05am</div><div style="font-size:13px">Hi John, I've taken over your compliance review. Just confirming — can Mary please complete her KYC as soon as she returns? We're on track otherwise. Any questions about the compliance process, happy to help.</div></div>
+            </div>
+          </div>
+          <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px">
+            <input class="form-input" placeholder="Reply to your team…" style="flex:1">
+            <button class="btn btn-filled btn-sm" onclick="sendMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ MODALS ═══ -->
+<div id="modal-overlay" class="modal-overlay" onclick="closeModal(event)">
+
+  <!-- SIGN DOCUMENT MODAL -->
+  <div class="modal modal-wide" id="sign-modal">
+    <div class="modal-header"><div class="modal-title" id="sign-modal-title">Sign document</div><button class="modal-close" onclick="closeModalById('sign-modal')">×</button></div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Draw your signature below or type your name. Your IP address and timestamp will be recorded.</div>
+      <div class="sig-option-tabs">
+        <button class="sig-opt active" onclick="switchSigMode('draw',this)">✍️ Draw</button>
+        <button class="sig-opt" onclick="switchSigMode('type',this)">⌨️ Type name</button>
+      </div>
+      <div id="sig-draw-panel">
+        <div class="sig-pad-wrap">
+          <canvas id="sig-canvas" width="480" height="160"></canvas>
+        </div>
+        <button onclick="clearSig()" class="btn btn-outline btn-xs" style="margin-top:8px">Clear</button>
+      </div>
+      <div id="sig-type-panel" style="display:none">
+        <input class="sig-type-input" id="sig-type-input" placeholder="Type your full legal name…" oninput="renderTypedSig(this.value)">
+        <div style="margin-top:12px;padding:16px;border:1px solid var(--border);border-radius:var(--radius-sm);min-height:60px;background:#fafafa">
+          <div id="sig-preview" style="font-family:'Dancing Script',cursive;font-size:36px;color:var(--dark)"></div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:10px 14px;background:var(--surface);border-radius:var(--radius-sm);font-size:12px;color:var(--text2)">
+        <div>📍 IP address: <strong id="sig-ip">203.120.45.67</strong></div>
+        <div>🕐 Timestamp: <strong id="sig-ts">24 Mar 2026 · 10:42am AEST</strong></div>
+        <div>🔒 Legally binding electronic signature</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('sign-modal')">Cancel</button>
+      <button class="btn btn-filled" onclick="submitSignature()">✓ Sign document</button>
+    </div>
+  </div>
+
+  <!-- HANDOFFS MODAL -->
+  <div class="modal" id="handoffs-modal">
+    <div class="modal-header"><div class="modal-title">Pending handoffs</div><button class="modal-close" onclick="closeModalById('handoffs-modal')">×</button></div>
+    <div class="modal-body">
+      <div style="padding:12px 16px;border:1.5px solid var(--amber);border-radius:var(--radius-sm);margin-bottom:10px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Williams Corp Trustee → Lodge</div>
+        <div style="font-size:12px;color:var(--text2)">Outgoing: Michael Torres (Check) · Incoming: Rachel Park (Lodge)</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Initiated 2 hrs ago · Awaiting Rachel Park acceptance</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-green btn-xs" onclick="acceptHandoff(this,'Williams Corp')">✓ Accept (Rachel)</button>
+          <button class="btn btn-outline btn-xs">Reassign</button>
+        </div>
+      </div>
+      <div style="padding:12px 16px;border:1.5px solid var(--amber);border-radius:var(--radius-sm);margin-bottom:10px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Smith Family SMSF → Check</div>
+        <div style="font-size:12px;color:var(--text2)">Outgoing: Emma Wilson (Prepare) · Incoming: Michael Torres (Check)</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Initiated 5 hrs ago · Awaiting acceptance</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-green btn-xs" onclick="acceptHandoff(this,'Smith Family')">✓ Accept (Michael)</button>
+          <button class="btn btn-outline btn-xs">Reassign</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModalById('handoffs-modal')">Close</button></div>
+  </div>
+
+  <!-- STAFF PROFILE MODAL -->
+  <div class="modal modal-wide" id="staff-profile-modal">
+    <div class="modal-header"><div class="modal-title">Edit staff profile</div><button class="modal-close" onclick="closeModalById('staff-profile-modal')">×</button></div>
+    <div class="modal-body">
+      <div style="display:flex;gap:20px">
+        <div style="flex-shrink:0;text-align:center">
+          <div style="width:80px;height:80px;border-radius:50%;background:var(--orange-light);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:var(--orange);margin:0 auto 8px">EW</div>
+          <button class="btn btn-outline btn-xs">Upload photo</button>
+        </div>
+        <div style="flex:1">
+          <div class="form-grid2">
+            <div class="form-group"><label class="form-label">Full name</label><input class="form-input" value="Emma Wilson"></div>
+            <div class="form-group"><label class="form-label">Role</label><select class="form-select"><option selected>Bookkeeper</option><option>Compliance</option><option>Tax Agent</option><option>Master Owner</option></select></div>
+            <div class="form-group"><label class="form-label">Years experience</label><input class="form-input" value="10" type="number"></div>
+            <div class="form-group"><label class="form-label">Phone / 3CX ext</label><input class="form-input" placeholder="+61 2 XXXX XXXX · ext 102"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Bio (visible to clients)</label><textarea class="form-input" rows="3">Emma has 10 years of experience in SMSF bookkeeping and administration.</textarea></div>
+          <div class="form-group"><label class="form-label">Fun facts (hobbies, pets, etc)</label><textarea class="form-input" rows="2">Hobbies: surfing and swimming. Has 2 dogs — Rusty and Pablo.</textarea></div>
+          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
+            <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--dark)">Email integration (SMTP/IMAP)</div>
+            <div class="form-grid2">
+              <div class="form-group"><label class="form-label">SMTP host</label><input class="form-input" placeholder="smtp.office365.com"></div>
+              <div class="form-group"><label class="form-label">SMTP port</label><input class="form-input" placeholder="587" type="number"></div>
+              <div class="form-group"><label class="form-label">Email username</label><input class="form-input" value="emma@aap.com.au"></div>
+              <div class="form-group"><label class="form-label">App password</label><input class="form-input" type="password" placeholder="••••••••"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('staff-profile-modal')">Cancel</button>
+      <button class="btn btn-filled" onclick="saveProfile()">Save profile</button>
+    </div>
+  </div>
+
+  <!-- FILE NOTE MODAL -->
+  <div class="modal" id="new-filenote-modal">
+    <div class="modal-header"><div class="modal-title">Add file note</div><button class="modal-close" onclick="closeModalById('new-filenote-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Type</label><select class="form-select"><option>Internal note</option><option>Call</option><option>Email</option><option>Meeting</option></select></div>
+      <div class="form-group"><label class="form-label">Subject</label><input class="form-input" placeholder="Brief subject…"></div>
+      <div class="form-group"><label class="form-label">Note</label><textarea class="form-input" rows="5" placeholder="Enter note details…"></textarea></div>
+      <div class="form-group"><label class="form-label">Tags (comma-separated)</label><input class="form-input" placeholder="e.g. kyc, trust-deed, urgent"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox"> Pin this note</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('new-filenote-modal')">Cancel</button>
+      <button class="btn btn-filled" onclick="saveFileNote()">Save note</button>
+    </div>
+  </div>
+
+  <!-- NEW COMPANY MODAL -->
+  <div class="modal" id="new-company-modal">
+    <div class="modal-header"><div class="modal-title">Add company / referrer</div><button class="modal-close" onclick="closeModalById('new-company-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Company name</label><input class="form-input" placeholder="e.g. Clime ASX"></div>
+      <div class="form-group"><label class="form-label">Type</label><select class="form-select"><option>Referrer</option><option>Internal</option><option>Partner</option></select></div>
+      <div class="form-grid2">
+        <div class="form-group"><label class="form-label">Contact name</label><input class="form-input"></div>
+        <div class="form-group"><label class="form-label">Contact email</label><input class="form-input" type="email"></div>
+        <div class="form-group"><label class="form-label">Contact phone</label><input class="form-input"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('new-company-modal')">Cancel</button>
+      <button class="btn btn-filled" onclick="saveCompany()">Add company</button>
+    </div>
+  </div>
+
+  <!-- CALL NOTE APPROVAL MODAL -->
+  <div class="modal modal-wide" id="call-note-modal">
+    <div class="modal-header"><div class="modal-title">📞 Call note — approve &amp; publish</div><button class="modal-close" onclick="closeModalById('call-note-modal')">×</button></div>
+    <div class="modal-body">
+      <div style="padding:10px 14px;background:var(--surface);border-radius:var(--radius-sm);font-size:12px;color:var(--text2);margin-bottom:14px">
+        <div>3CX call ref: <strong>#CX-4421</strong> · Duration: <strong>8 min 14 sec</strong> · 20 Mar 2026 09:15am</div>
+        <div style="margin-top:2px">Transcribed &amp; formatted by Echo Notes (BizGPT) · ref #EN-2847</div>
+      </div>
+      <div class="form-group"><label class="form-label">Subject</label><input class="form-input" value="Outbound call — Trust deed discussion"></div>
+      <div class="form-group"><label class="form-label">Call note</label><textarea class="form-input" rows="8">Discussed trust deed requirements with John Smith. Client confirmed they have a copy of original deed from 2018. Will scan and upload by Thursday. Also noted that Mary Smith is overseas until 24 March — KYC to be completed on return. Client asked about investment strategy options for ETFs.</textarea></div>
+      <div class="form-group"><label class="form-label">Tags</label><input class="form-input" value="trust deed, kyc delay, etf"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('call-note-modal')">Cancel</button>
+      <button class="btn btn-green" onclick="approveCallNote()">✓ Approve &amp; publish to file</button>
+    </div>
+  </div>
+
+  <!-- SIMPLE MODALS -->
+  <div class="modal modal-sm" id="upload-doc-modal">
+    <div class="modal-header"><div class="modal-title">Upload document</div><button class="modal-close" onclick="closeModalById('upload-doc-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Financial year</label><select class="form-select"><option>FY2026</option><option>FY2025</option><option>FY2024</option></select></div>
+      <div class="form-group"><label class="form-label">Document type</label><select class="form-select"><option>Trust Deed &amp; Establishment</option><option>KYC / Identity</option><option>ATO Correspondence</option><option>ASIC Correspondence</option><option>Tax Return</option><option>Financial Statements</option><option>Audit Report</option><option>Signed Agreement</option><option>Other</option></select></div>
+      <div class="form-group"><label class="form-label">File</label><input type="file" class="form-input"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModalById('upload-doc-modal')">Cancel</button><button class="btn btn-filled" onclick="uploadDoc()">Upload</button></div>
+  </div>
+
+  <div class="modal modal-sm" id="message-modal">
+    <div class="modal-header"><div class="modal-title">Message client</div><button class="modal-close" onclick="closeModalById('message-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">To</label><input class="form-input" value="John Smith (john@smithfamily.com.au)"></div>
+      <div class="form-group"><label class="form-label">Subject</label><input class="form-input" placeholder="Subject…"></div>
+      <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" rows="4" placeholder="Type your message…"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModalById('message-modal')">Cancel</button><button class="btn btn-filled" onclick="sendClientMessage()">Send message</button></div>
+  </div>
+
+  <div class="modal modal-sm" id="send-kyc-modal">
+    <div class="modal-header"><div class="modal-title">Send KYC verification link</div><button class="modal-close" onclick="closeModalById('send-kyc-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Member</label><select class="form-select"><option>Mary Smith</option><option>John Smith</option></select></div>
+      <div class="form-group"><label class="form-label">Provider</label><select class="form-select"><option>AAP Native KYC</option><option>External Provider</option></select></div>
+      <div class="form-group"><label class="form-label">Send link to</label><input class="form-input" value="mary@smithfamily.com.au"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModalById('send-kyc-modal')">Cancel</button><button class="btn btn-filled" onclick="sendKYCLink()">Send KYC link</button></div>
+  </div>
+
+  <div class="modal modal-sm" id="reassign-modal">
+    <div class="modal-header"><div class="modal-title">Reassign matter</div><button class="modal-close" onclick="closeModalById('reassign-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Stage to reassign</label><select class="form-select"><option>Check (current)</option><option>Prepare</option><option>Lodge</option></select></div>
+      <div class="form-group"><label class="form-label">Assign to</label><select class="form-select"><option>Michael Torres</option><option>Emma Wilson</option><option>Sarah Chen</option><option>Rachel Park</option></select></div>
+      <div class="form-group"><label class="form-label">Reason (optional)</label><textarea class="form-input" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModalById('reassign-modal')">Cancel</button><button class="btn btn-filled" onclick="reassignMatter()">Reassign &amp; notify</button></div>
+  </div>
+
+  <div class="modal modal-sm" id="new-matter-modal">
+    <div class="modal-header"><div class="modal-title">New client / matter</div><button class="modal-close" onclick="closeModalById('new-matter-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Fund / client name</label><input class="form-input" placeholder="e.g. Jones Family SMSF"></div>
+      <div class="form-group"><label class="form-label">Company group</label><select class="form-select"><option>— Select —</option><option>Clime ASX</option><option>Liberty</option><option>RiverX</option><option>AAP</option></select></div>
+      <div class="form-group"><label class="form-label">Matter type</label><select class="form-select"><option>New SMSF Setup</option><option>Existing SMSF Onboarding</option><option>Corporate Trustee Setup</option></select></div>
+      <div class="form-group"><label class="form-label">Package</label><select class="form-select"><option>Default + Accounting ($999)</option><option>Unlisted Assets ($1,149)</option><option>BYOA ($1,399)</option></select></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModalById('new-matter-modal')">Cancel</button><button class="btn btn-filled" onclick="createMatter()">Create &amp; assign</button></div>
+  </div>
+
+  <div class="modal modal-sm" id="client-kyc-modal">
+    <div class="modal-header"><div class="modal-title">KYC Verification — Mary Smith</div><button class="modal-close" onclick="closeModalById('client-kyc-modal')">×</button></div>
+    <div class="modal-body" id="kyc-step-body">
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:40px;margin-bottom:12px">🪪</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">Identity verification</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:20px">We need to verify Mary Smith's identity. This takes about 5 minutes and requires a government-issued photo ID.</div>
+        <button class="btn btn-filled" onclick="startKYCFlow()">Start verification →</button>
+      </div>
+    </div>
+    <div class="modal-footer"></div>
+  </div>
+
+</div><!-- /modal-overlay -->
+
+
+<script>
+// ═══ DATA ═══
+const CLIENTS = [
+  {id:'M001',name:'Smith Family SMSF',sub:'M001 · ABN 12 345 678 901',company:'Liberty',cbClass:'cb-liberty',type:'New SMSF',stage:'Check',pillClass:'pill-check',owner:'M. Torres',due:'22 Mar'},
+  {id:'M002',name:'Johnson Retirement Fund',sub:'M002 · ABN 45 678 901 234',company:'Clime ASX',cbClass:'cb-clime',type:'Existing',stage:'Prepare',pillClass:'pill-prepare',owner:'E. Wilson',due:'25 Mar'},
+  {id:'M003',name:'Williams Corp Trustee',sub:'M003 · ACN 098 765 432',company:'AAP',cbClass:'cb-aap',type:'Corp Trustee',stage:'Lodge',pillClass:'pill-lodge',owner:'R. Park',due:'28 Mar'},
+  {id:'M004',name:'Brown Family Super',sub:'M004 · New client',company:'RiverX',cbClass:'cb-riverx',type:'New SMSF',stage:'Start',pillClass:'pill-start',owner:'E. Wilson',due:'30 Mar'},
+  {id:'M005',name:'Chen Investment Fund',sub:'M005 · Annual compliance',company:'Clime ASX',cbClass:'cb-clime',type:'Compliance',stage:'Active',pillClass:'pill-active',owner:'S. Chen',due:'—'},
+  {id:'M006',name:'Davis Investment Fund',sub:'M006 · ABN 78 901 234 567',company:'Liberty',cbClass:'cb-liberty',type:'New SMSF',stage:'Check',pillClass:'pill-check',owner:'S. Chen',due:'24 Mar'},
+  {id:'M007',name:'Nguyen SMSF',sub:'M007 · New client',company:'RiverX',cbClass:'cb-riverx',type:'New SMSF',stage:'Prepare',pillClass:'pill-prepare',owner:'E. Wilson',due:'26 Mar'},
+  {id:'M008',name:'Thompson SMSF',sub:'M008 · ATO ready',company:'Clime ASX',cbClass:'cb-clime',type:'New SMSF',stage:'Lodge',pillClass:'pill-lodge',owner:'R. Park',due:'28 Mar'},
+];
+const STAGE_OWNER_MAP = {Start:'Sarah Chen',Prepare:'Emma Wilson',Check:'Michael Torres',Lodge:'Rachel Park',Active:'Sarah Chen'};
+const STAGE_INITIALS = {Start:'SC',Prepare:'EW',Check:'MT',Lodge:'RP',Active:'SC'};
+const STAGE_COLORS = {Start:'#3b82f6',Prepare:'#7c3aed',Check:'#059669',Lodge:'#dc2626',Active:'var(--orange)'};
+
+// ═══ STATE ═══
+let currentStep=1, totalSteps=5, currentPkg='default', currentPkgPrice='$999', currentMatter='M001';
+let sigDrawing=false, sigCtx=null, sigMode='draw';
+let memberCount=1;
+
+// ═══ ONBOARDING ═══
+function selectAdmin(t){document.querySelectorAll('.admin-card').forEach(c=>c.classList.remove('selected'));document.getElementById('admin-'+t).classList.add('selected');}
+function selectPkg(t,p){currentPkg=t;currentPkgPrice=p;document.querySelectorAll('.pkg-card').forEach(c=>c.classList.remove('selected'));document.getElementById('pkg-'+t).classList.add('selected');}
+function selectTrustee(t){
+  ['individual','corporate'].forEach(s=>{const e=document.getElementById('tr-'+s);if(!e)return;e.style.border='1.5px solid var(--border2)';e.style.background='white';e.style.color='var(--text2)';});
+  const sel=document.getElementById('tr-'+t);if(sel){sel.style.border='1.5px solid var(--orange)';sel.style.background='var(--orange-light)';sel.style.color='var(--orange)';}
+}
+function addMember(){
+  memberCount++;
+  const c=document.getElementById('members-container');
+  const d=document.createElement('div');d.className='member-card';d.id='member-'+memberCount;
+  d.innerHTML=`<div class="member-card-header"><div class="member-card-title">Member ${memberCount}</div><button class="btn btn-xs btn-outline" onclick="removeMember('member-${memberCount}')">✕ Remove</button></div><div class="form-grid2"><div class="form-group"><label class="form-label">First name</label><input class="form-input"></div><div class="form-group"><label class="form-label">Last name</label><input class="form-input"></div><div class="form-group"><label class="form-label">Date of birth</label><input class="form-input" type="date"></div><div class="form-group"><label class="form-label">TFN</label><input class="form-input"></div><div class="form-group" style="grid-column:span 2"><label class="form-label">Email</label><input class="form-input" type="email"></div><div class="form-group"><label class="form-label">Mobile</label><input class="form-input"></div></div>`;
+  c.appendChild(d);toast('Member '+memberCount+' added');
+}
+function removeMember(id){const e=document.getElementById(id);if(e){e.remove();toast('Member removed');}}
+function goToStep(n){currentStep=n;updateSteps();}
+function nextStep(){if(currentStep<totalSteps){currentStep++;updateSteps();}else submitOnboard();}
+function prevStep(){if(currentStep>1){currentStep--;updateSteps();}}
+function updateSteps(){
+  document.querySelectorAll('.onboard-step').forEach(s=>s.classList.remove('active'));
+  const cur=document.getElementById('step-'+currentStep)||document.getElementById('step-success');
+  if(cur)cur.classList.add('active');
+  for(let i=1;i<=totalSteps;i++){
+    const ps=document.getElementById('ps'+i),pd=document.getElementById('pd'+i),pl=document.getElementById('pl'+i);
+    if(ps)ps.className='prog-step'+(i<currentStep?' done':i===currentStep?' current':'');
+    if(pd)pd.className='prog-dot'+(i<currentStep?' done':i===currentStep?' current':'');
+    if(pl)pl.className='prog-line'+(i<currentStep?' done':'');
+  }
+  const bb=document.getElementById('btn-back'),bn=document.getElementById('btn-next');
+  if(bb)bb.style.visibility=currentStep>1?'visible':'hidden';
+  if(bn)bn.textContent=currentStep===totalSteps?'Submit →':'Continue →';
+  if(currentStep===totalSteps){
+    const fn2=document.getElementById('fund-name'),fc=document.getElementById('fund-company'),ft=document.getElementById('fund-type');
+    const rp=document.getElementById('r-package'),rprice=document.getElementById('r-price'),rfund=document.getElementById('r-fund'),rco=document.getElementById('r-company'),rt=document.getElementById('r-type');
+    if(rp)rp.textContent=currentPkg==='default'?'Default + Accounting ($999/yr)':currentPkg==='unlisted'?'Default + Accounting + Unlisted ($1,149/yr)':'BYOA Package ($1,399/yr)';
+    if(rprice)rprice.textContent=currentPkgPrice+' AUD/year';
+    if(fn2&&rfund)rfund.textContent=fn2.value||'Smith Family Superannuation Fund';
+    if(fc&&rco)rco.textContent=fc.value||'—';
+    if(ft&&rt)rt.textContent=ft.value||'New SMSF Setup';
+  }
+}
+function submitOnboard(){
+  document.querySelectorAll('.onboard-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('step-success').classList.add('active');
+  const bb=document.getElementById('btn-back'),bn=document.getElementById('btn-next');
+  if(bb)bb.style.visibility='hidden';if(bn)bn.style.display='none';
+}
+function goToOnboard(){showScreen('onboard-screen');}
+function goToStaffLogin(){showScreen('login-screen');}
+function goToClientPortal(){showScreen('client-screen');}
+
+// ═══ AUTH ═══
+function pickLogin(email,name,role,initials,color){
+  document.getElementById('l-email').value=email;
+  window._loginName=name;window._loginRole=role;window._loginInitials=initials;window._loginColor=color;
+}
+function doStaffLogin(){
+  const av=document.getElementById('s-avatar'),sn=document.getElementById('s-name'),sr=document.getElementById('s-role');
+  if(av){av.textContent=window._loginInitials||'SC';av.style.background=window._loginColor||'var(--orange)';}
+  if(sn)sn.textContent=window._loginName||'Sarah Chen';
+  if(sr)sr.textContent=window._loginRole||'Master Owner';
+  showScreen('app-screen');showPanel('dashboard',null);
+}
+function doLogout(){showScreen('login-screen');}
+
+// ═══ NAVIGATION ═══
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showPanel(id,navEl){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const p=document.getElementById('panel-'+id);if(p)p.classList.add('active');
+  if(navEl){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));navEl.classList.add('active');}
+  const t=document.getElementById('t-title');
+  const map={dashboard:'Dashboard',clients:'Clients',companies:'Companies',preparation:'Preparation Queue',compliance:'Compliance Queue',lodgement:'Lodgement Queue',kyc:'KYC Management',users:'Staff Profiles & Assignments',notifications:'Notifications',auditlog:'Audit Log','matter-detail':'Matter Detail'};
+  if(t)t.textContent=map[id]||id;
+  if(id==='clients')renderClientsTable(CLIENTS);
+}
+function showTab(id,el){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  const p=document.getElementById('tab-'+id);if(p)p.classList.add('active');
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+}
+function showClientPanel(id,el){
+  document.querySelectorAll('.client-panel').forEach(p=>p.classList.remove('active'));
+  const p=document.getElementById(id);if(p)p.classList.add('active');
+  document.querySelectorAll('.client-nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+}
+
+// ═══ CLIENTS TABLE ═══
+function renderClientsTable(data){
+  const tbody=document.getElementById('matters-tbody');if(!tbody)return;
+  if(!data.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">No clients match your search</td></tr>';return;}
+  tbody.innerHTML=data.map(c=>`<tr onclick="openMatter('${c.id}')"><td><div class="matter-name">${c.name}</div><div class="matter-sub">${c.sub}</div></td><td><span class="company-badge ${c.cbClass}">${c.company}</span></td><td style="font-size:12px;color:var(--text2)">${c.type}</td><td><span class="stage-pill ${c.pillClass}">${c.stage}</span></td><td style="font-size:12px">${c.owner}</td><td style="font-size:12px;color:var(--text3)">${c.due}</td></tr>`).join('');
+}
+function filterMatters(){
+  const q=(document.querySelector('#panel-clients .search-input')?.value||'').toLowerCase();
+  const stage=document.querySelectorAll('#panel-clients .filter-select')[0]?.value||'';
+  const company=document.querySelectorAll('#panel-clients .filter-select')[1]?.value||'';
+  renderClientsTable(CLIENTS.filter(c=>{
+    return(!q||c.name.toLowerCase().includes(q)||c.sub.toLowerCase().includes(q)||c.company.toLowerCase().includes(q))&&(!stage||c.stage===stage)&&(!company||c.company===company);
+  }));
+}
+function filterByCompany(v){
+  const cf2=document.getElementById('company-filter2');if(cf2&&v)cf2.value=v;
+  filterMatters();if(v)toast('🏢 Filtered to: '+v+' ('+CLIENTS.filter(c=>c.company===v).length+' clients)');
+}
+function filterByCompanyAndOpen(co){filterByCompany(co);showPanel('clients',null);}
+function runSearch(v){
+  const el=document.querySelector('#panel-clients .search-input');if(el)el.value=v;
+  filterMatters();
+  if(v.length>1){const n=CLIENTS.filter(c=>c.name.toLowerCase().includes(v.toLowerCase())||c.company.toLowerCase().includes(v.toLowerCase())).length;toast('🔍 '+n+' result'+(n!==1?'s':'')+'  for "'+v+'"');}
+}
+
+// ═══ MATTER DETAIL ═══
+function openMatter(id){
+  currentMatter=id;showPanel('matter-detail',null);buildMatterDetail();
+  // Reset to overview tab
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  const ov=document.getElementById('tab-overview');if(ov)ov.classList.add('active');
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+  const firstTab=document.querySelector('.mtab');if(firstTab)firstTab.classList.add('active');
+}
+function buildMatterDetail(){
+  const c=CLIENTS.find(x=>x.id===currentMatter)||CLIENTS[0];
+  const stages=['Start','Prepare','Check','Lodge','Active'];
+  const idx=stages.indexOf(c.stage);
+  const pill=document.getElementById('d-pill');if(pill){pill.className='stage-pill '+c.pillClass;pill.textContent=c.stage;}
+  const dn=document.getElementById('d-name');if(dn)dn.textContent=c.name;
+  const did=document.getElementById('d-id');if(did)did.textContent=c.id;
+  const cb=document.getElementById('d-company-badge');if(cb){cb.className='company-badge '+c.cbClass;cb.textContent=c.company;}
+  const dm=document.getElementById('d-client');if(dm)dm.textContent=c.id+' · '+c.type+' · '+c.company;
+  const pt=document.getElementById('d-progress');
+  if(pt)pt.innerHTML=stages.map((s,i)=>{let cls=i<idx?'done':i===idx?'current':'';return`<div class="pt-step ${cls}"><div class="pt-dot ${cls}">${i<idx?'✓':i+1}</div><div class="pt-label">${s}</div></div>`;}).join('');
+  // Ownership strip
+  const os=document.getElementById('ownership-strip');
+  if(os)os.innerHTML=stages.map((s,i)=>{
+    const done=i<idx,active=i===idx;
+    const initials=STAGE_INITIALS[s],color=STAGE_COLORS[s],name=STAGE_OWNER_MAP[s];
+    let cls='ownership-card'+(done?' completed-stage':active?' active-stage':'');
+    let status=done?'<div class="oc-status" style="color:var(--green)">✓ Completed</div>':active?'<div class="oc-status" style="color:var(--orange)">● Active</div>':'<div class="oc-status">Pending handoff</div>';
+    return`<div class="${cls}"><div class="oc-avatar" style="background:${color}">${initials}</div><div class="oc-info"><div class="oc-stage">${s}</div><div class="oc-name">${name}</div>${status}</div></div>`;
+  }).join('');
+}
+function advanceStage(){
+  const c=CLIENTS.find(x=>x.id===currentMatter);if(!c)return;
+  const stages=['Start','Prepare','Check','Lodge','Active'];
+  const idx=stages.indexOf(c.stage);
+  if(idx>=stages.length-1){toast('✓ Already in Active stage');return;}
+  const next=stages[idx+1];
+  const owner=STAGE_OWNER_MAP[next];
+  if(confirm('Advance "'+c.name+'" from '+c.stage+' → '+next+'?\n\n'+owner+' will be notified to accept custody.')){
+    c.stage=next;c.pillClass='pill-'+next.toLowerCase();
+    const short=owner.split(' ');c.owner=short[0][0]+'. '+short[1];
+    buildMatterDetail();addAuditEntry(c.id,'STAGE_ADVANCE',c.stage+' · Handoff to '+owner);
+    toast('→ Advanced to '+next+'! '+owner+' notified');
+  }
+}
+function approveMatter(){addAuditEntry(currentMatter,'APPROVED','Approved by admin');toast('✓ Matter approved');}
+
+// ═══ TASKS ═══
+function toggleTask(el){
+  el.classList.toggle('done');
+  const name=el.nextElementSibling?.querySelector('.task-name')?.textContent||'Task';
+  toast(el.classList.contains('done')?'✓ Completed: '+name:'↩ Reopened: '+name);
+}
+function addTask(){ensureTaskModal();openModal('add-task-modal');}
+function saveTask(){
+  const title=document.getElementById('task-title-input')?.value;
+  const assignee=document.getElementById('task-assignee-input')?.value||'Unassigned';
+  const due=document.getElementById('task-due-input')?.value;
+  if(!title){toast('⚠ Please enter a task title');return;}
+  const list=document.getElementById('tasks-list');
+  if(list){const d=document.createElement('div');d.className='task-item';d.innerHTML=`<div class="task-check" onclick="toggleTask(this)"></div><div><div class="task-name">${title}</div><div class="task-meta">Due ${due||'—'} · ${assignee}</div></div>`;list.appendChild(d);}
+  document.getElementById('task-title-input').value='';
+  closeModalById('add-task-modal');addAuditEntry(currentMatter,'TASK_ADDED',title);toast('✓ Task added: '+title);
+}
+
+// ═══ FILE NOTES ═══
+function saveFileNote(){
+  const subEl=document.querySelector('#new-filenote-modal input.form-input[placeholder="Brief subject…"]');
+  const bodyEl=document.querySelector('#new-filenote-modal textarea');
+  const typeEl=document.querySelector('#new-filenote-modal select');
+  const tagsEl=document.querySelector('#new-filenote-modal input[placeholder="e.g. kyc, trust-deed, urgent"]');
+  const subject=subEl?.value;const body=bodyEl?.value;const type=typeEl?.value||'Internal note';
+  if(!subject||!body){toast('⚠ Please enter a subject and note');return;}
+  const icons={Call:'📞','Internal note':'📝',Email:'✉️',Meeting:'🗓'};
+  const bgs={Call:'#fdf4ff','Internal note':'#fff7ed',Email:'#eff6ff',Meeting:'#f0fdf4'};
+  const tagHtml=(tagsEl?.value||'').split(',').filter(t=>t.trim()).map(t=>`<span class="fn-tag">${t.trim()}</span>`).join('');
+  const d=document.createElement('div');d.className='fn-item';
+  d.innerHTML=`<div class="fn-header"><div class="fn-type-icon" style="background:${bgs[type]||'#f3f4f6'}">${icons[type]||'📝'}</div><div class="fn-meta"><div class="fn-subject">${subject}</div><div class="fn-submeta">Just now · ${window._loginName||'Staff'} · ${type}</div></div></div><div class="fn-body">${body}</div>${tagHtml?`<div class="fn-tags">${tagHtml}</div>`:''}`;
+  const list=document.getElementById('filenotes-list');if(list)list.insertBefore(d,list.firstChild);
+  if(subEl)subEl.value='';if(bodyEl)bodyEl.value='';if(tagsEl)tagsEl.value='';
+  closeModalById('new-filenote-modal');addAuditEntry(currentMatter,'FILE_NOTE_ADDED',type+' · '+subject);toast('📝 File note saved');
+}
+function approveFileNote(btn){
+  const item=btn.closest('.fn-item');const draft=item.querySelector('.fn-draft');if(draft)draft.remove();
+  btn.parentElement.innerHTML='<span style="color:var(--green);font-size:12px;font-weight:600">✓ Published to file</span>';
+  addAuditEntry(currentMatter,'FILE_NOTE_APPROVED','Call note published');toast('✓ File note published');
+}
+function approveCallNote(){closeModalById('call-note-modal');addAuditEntry(currentMatter,'CALL_NOTE_APPROVED','Echo Notes approved');toast('✓ Call note approved and published to file');}
+
+// ═══ DOCUMENTS ═══
+function uploadDoc(){
+  const fy=document.querySelector('#upload-doc-modal select')?.value||'FY2026';
+  const type=document.querySelectorAll('#upload-doc-modal select')[1]?.value||'Other';
+  const fileEl=document.querySelector('#upload-doc-modal input[type=file]');
+  const fname=fileEl?.files?.[0]?.name||'uploaded_document.pdf';
+  const sections=document.querySelectorAll('#tab-documents .doc-type-section');
+  if(sections.length){const d=document.createElement('div');d.className='doc-item';d.innerHTML=`<div class="doc-icon">📄</div><div><div class="doc-name">${fname}</div><div class="doc-meta">${fy} · ${type} · Just uploaded · ${window._loginName||'Staff'}</div></div><button class="btn btn-xs btn-outline" style="margin-left:auto" onclick="openSignModal('${fname}')">Sign</button>`;sections[0].appendChild(d);}
+  addAuditEntry(currentMatter,'DOCUMENT_UPLOAD',fname+' · '+type);closeModalById('upload-doc-modal');toast('📄 Uploaded: '+fname);
+}
+function switchYear(y,el){
+  document.querySelectorAll('.year-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  const content=document.getElementById('docs-year-content');if(!content)return;
+  if(y==='FY2025')content.innerHTML=`<div class="doc-type-section"><div class="doc-type-label">Tax Returns <span style="font-size:11px;color:var(--text3)">1 file</span></div><div class="doc-item"><div class="doc-icon">📊</div><div><div class="doc-name">Smith_SMSF_Tax_Return_FY2025.pdf</div><div class="doc-meta">FY2025 · 1.8 MB · 31 Oct 2025</div></div><span class="stat-tag tag-green" style="margin-left:auto">✓ Lodged</span></div></div><div class="doc-type-section"><div class="doc-type-label">Audit Reports <span style="font-size:11px;color:var(--text3)">1 file</span></div><div class="doc-item"><div class="doc-icon">🔍</div><div><div class="doc-name">Smith_SMSF_Audit_FY2025.pdf</div><div class="doc-meta">FY2025 · 950 KB · 15 Oct 2025</div></div></div></div>`;
+  else if(y==='FY2024')content.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">FY2024 documents archived · <a href="#" style="color:var(--orange)" onclick="toast('📦 Archive request sent');return false">Request access</a></div>`;
+  else if(y==='All')content.innerHTML=`<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Showing all years</div>`;
+  toast('📁 '+y+' documents loaded');
+}
+
+// ═══ KYC ═══
+function approveKYC(el){
+  const row=el.closest('tr');
+  if(row){const s=row.querySelector('.stat-tag');if(s){s.className='stat-tag tag-green';s.textContent='✓ Pass';}el.textContent='View';el.onclick=null;}
+  addAuditEntry(currentMatter,'KYC_APPROVED','Manual approval');toast('✓ KYC approved');
+}
+function requestKYCInfo(){toast('✉ KYC remediation request sent to client');}
+function sendKYCLink(){
+  const member=document.querySelector('#send-kyc-modal select')?.value||'client';
+  addAuditEntry(currentMatter,'KYC_LINK_SENT','Sent to '+member);closeModalById('send-kyc-modal');toast('🪪 KYC link sent to '+member);
+}
+
+// ═══ MESSAGES ═══
+function sendMessage(){
+  const inputs=document.querySelectorAll('input[placeholder="Type a message…"],input[placeholder="Reply to your team…"]');
+  let input=Array.from(inputs).find(i=>i.value.trim());
+  if(!input){toast('⚠ Please type a message');return;}
+  const msg=input.value.trim();
+  const thread=input.closest('.card,[style*="border:1px"]');
+  const area=thread?.querySelector('[style*="flex-direction:column;gap"]')||thread?.querySelector('[style*="gap:12px"]');
+  if(area){const d=document.createElement('div');d.style.cssText='display:flex;gap:10px;justify-content:flex-end';d.innerHTML=`<div style="background:var(--orange);color:white;border-radius:var(--radius-sm);padding:10px 14px;max-width:70%"><div style="font-size:11px;opacity:.75;margin-bottom:4px">${window._loginName||'You'} · Just now</div><div style="font-size:13px">${msg}</div></div><div class="user-avatar" style="background:${window._loginColor||'var(--orange)'};width:28px;height:28px;font-size:11px;flex-shrink:0">${window._loginInitials||'SC'}</div>`;area.appendChild(d);}
+  input.value='';addAuditEntry(currentMatter,'MESSAGE_SENT','Internal message');toast('✉ Message sent');
+}
+function sendClientMessage(){
+  const subject=document.querySelector('#message-modal input[placeholder="Subject…"]')?.value;
+  const body=document.querySelector('#message-modal textarea')?.value;
+  if(!subject||!body){toast('⚠ Please enter subject and message');return;}
+  addAuditEntry(currentMatter,'MESSAGE_SENT_CLIENT',subject);closeModalById('message-modal');toast('✉ Sent to client: '+subject);
+}
+
+// ═══ COMPANIES ═══
+function saveCompany(){
+  const name=document.querySelector('#new-company-modal .form-input')?.value;
+  if(!name){toast('⚠ Please enter a company name');return;}
+  const grid=document.querySelector('#panel-companies [style*="grid-template-columns"]');
+  if(grid){
+    const colors=['#dbeafe','#dcfce7','#fdf4ff','#fff7ed'];const tcs=['#1d4ed8','#15803d','#7e22ce','#c2410c'];
+    const ri=Math.floor(Math.random()*colors.length);
+    const d=document.createElement('div');d.className='card';d.style.cursor='pointer';
+    d.onclick=()=>filterByCompanyAndOpen(name);
+    d.innerHTML=`<div style="padding:20px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><div style="width:44px;height:44px;border-radius:var(--radius-sm);background:${colors[ri]};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:${tcs[ri]}">${name[0].toUpperCase()}</div><div><div style="font-size:15px;font-weight:700">${name}</div><div style="font-size:12px;color:var(--text2)">New company · 0 clients</div></div></div><div style="font-size:12px;color:var(--text3)">No clients assigned yet</div></div>`;
+    grid.appendChild(d);
+  }
+  const modal=document.getElementById('new-company-modal');if(modal)modal.querySelectorAll('input,textarea').forEach(el=>el.value='');
+  closeModalById('new-company-modal');toast('🏢 Company added: '+name);
+}
+
+// ═══ MATTER CREATION ═══
+function createMatter(){
+  const name=document.querySelector('#new-matter-modal .form-input')?.value;
+  if(!name){toast('⚠ Please enter a fund/client name');return;}
+  const company=document.querySelectorAll('#new-matter-modal select')[0]?.value||'AAP';
+  const type=document.querySelectorAll('#new-matter-modal select')[1]?.value||'New SMSF Setup';
+  const newId='M'+(String(CLIENTS.length+1).padStart(3,'0'));
+  const cbMap={'Clime ASX':'cb-clime','Liberty':'cb-liberty','RiverX':'cb-riverx','AAP':'cb-aap'};
+  CLIENTS.push({id:newId,name,sub:newId+' · '+type,company,cbClass:cbMap[company]||'cb-other',type:type.split(' ')[0]+' '+type.split(' ')[1],stage:'Start',pillClass:'pill-start',owner:'E. Wilson',due:'TBD'});
+  renderClientsTable(CLIENTS);closeModalById('new-matter-modal');
+  addAuditEntry(newId,'MATTER_CREATED',name+' · '+company);toast('🆕 Client created: '+name+' ('+newId+')');
+  showPanel('clients',null);
+}
+
+// ═══ REASSIGN ═══
+function reassignMatter(){
+  const stage=document.querySelector('#reassign-modal select')?.value||'Check';
+  const staff=document.querySelectorAll('#reassign-modal select')[1]?.value||'Michael Torres';
+  addAuditEntry(currentMatter,'REASSIGNED',stage+' → '+staff);closeModalById('reassign-modal');toast('👤 Reassigned: '+stage+' → '+staff);
+}
+
+// ═══ ADMIN DEFAULTS ═══
+function saveDefaultAssignments(){toast('✓ Default stage assignments saved');}
+
+// ═══ HANDOFFS ═══
+function acceptHandoff(btn,name){
+  btn.parentElement.innerHTML='<span style="color:var(--green);font-size:12px;font-weight:600">✓ Custody accepted</span>';
+  addAuditEntry('','HANDOFF_ACCEPTED',name);toast('✓ Handoff accepted for '+name);
+}
+
+// ═══ STAFF ═══
+function saveProfile(){
+  const name=document.querySelectorAll('#staff-profile-modal .form-input')[0]?.value;
+  closeModalById('staff-profile-modal');toast('👤 Profile saved'+(name?' for '+name:''));
+}
+function inviteUser(){
+  const email=prompt('Enter email address to invite as staff:');
+  if(email&&email.includes('@'))toast('✉ Invite sent to '+email);
+  else if(email)toast('⚠ Invalid email address');
+}
+function markAllRead(){
+  document.querySelectorAll('.notif-dot').forEach(d=>d.classList.add('read'));
+  toast('✓ All notifications marked read');
+}
+
+// ═══ AUDIT ═══
+function addAuditEntry(clientId,action,detail){
+  const now=new Date();
+  const ts=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const user=(window._loginName||'sarah chen').toLowerCase().replace(/\s/,'_')+'@aap';
+  const log=document.querySelector('#panel-auditlog .card');
+  if(log&&document.getElementById('panel-auditlog').classList.contains('active')){
+    const d=document.createElement('div');d.className='log-row';
+    d.innerHTML=`<span class="log-ts">${ts}</span><span style="font-size:12px">${user}</span><span style="font-size:12px"><strong>${action}</strong>${detail?' — '+detail:''}</span><span style="font-size:12px">${clientId||currentMatter}</span>`;
+    const hdr=log.querySelector('.log-header');if(hdr)hdr.after(d);
+  }
+}
+
+// ═══ CALL ═══
+function initiateCall(){
+  const btn=document.getElementById('call-btn');if(!btn)return;
+  if(btn.classList.contains('calling')){
+    btn.classList.remove('calling');btn.innerHTML='📞 Call client';
+    addAuditEntry(currentMatter,'CALL_ENDED','3CX · Echo Notes transcript queued');
+    toast('📞 Call ended — Echo Notes transcript incoming');
+    setTimeout(()=>toast('📩 Echo Notes draft ready — check File Notes tab'),3500);
+  }else{
+    btn.classList.add('calling');btn.innerHTML='⏹ End call';
+    addAuditEntry(currentMatter,'CALL_INITIATED','3CX outbound call');
+    toast('📞 Dialling via 3CX…');
+    setTimeout(()=>{if(btn.classList.contains('calling'))toast('🎙 Connected — recording started');},2000);
+  }
+}
+
+// ═══ LODGEMENT ═══
+function mockLodge(){
+  const c=CLIENTS.find(x=>x.id===currentMatter)||{name:'matter'};
+  addAuditEntry(currentMatter,'LODGEMENT_SUBMITTED','Mock · ref LOD-'+Math.floor(Math.random()*90000+10000));
+  toast('📤 Lodgement submitted for '+c.name);
+}
+
+// ═══ SIGN ═══
+function openSignModal(docName){document.getElementById('sign-modal-title').textContent='Sign: '+docName;openModal('sign-modal');}
+function initSigPad(){
+  const canvas=document.getElementById('sig-canvas');if(!canvas||canvas._init)return;canvas._init=true;
+  sigCtx=canvas.getContext('2d');sigCtx.strokeStyle='#111827';sigCtx.lineWidth=2.5;sigCtx.lineCap='round';sigCtx.lineJoin='round';
+  const pos=e=>{const r=canvas.getBoundingClientRect();return[(e.touches?e.touches[0].clientX:e.clientX)-r.left,(e.touches?e.touches[0].clientY:e.clientY)-r.top];};
+  canvas.addEventListener('mousedown',e=>{sigDrawing=true;const[x,y]=pos(e);sigCtx.beginPath();sigCtx.moveTo(x,y);});
+  canvas.addEventListener('mousemove',e=>{if(!sigDrawing)return;const[x,y]=pos(e);sigCtx.lineTo(x,y);sigCtx.stroke();});
+  ['mouseup','mouseleave'].forEach(ev=>canvas.addEventListener(ev,()=>sigDrawing=false));
+  canvas.addEventListener('touchstart',e=>{e.preventDefault();sigDrawing=true;const[x,y]=pos(e);sigCtx.beginPath();sigCtx.moveTo(x,y);},{passive:false});
+  canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!sigDrawing)return;const[x,y]=pos(e);sigCtx.lineTo(x,y);sigCtx.stroke();},{passive:false});
+  canvas.addEventListener('touchend',()=>sigDrawing=false);
+}
+function clearSig(){if(sigCtx){const c=document.getElementById('sig-canvas');sigCtx.clearRect(0,0,c.width,c.height);}}
+function switchSigMode(mode,el){
+  sigMode=mode;document.querySelectorAll('.sig-opt').forEach(b=>b.classList.remove('active'));el.classList.add('active');
+  document.getElementById('sig-draw-panel').style.display=mode==='draw'?'block':'none';
+  document.getElementById('sig-type-panel').style.display=mode==='type'?'block':'none';
+}
+function renderTypedSig(v){const p=document.getElementById('sig-preview');if(p)p.textContent=v;}
+function submitSignature(){
+  if(sigMode==='draw'){const c=document.getElementById('sig-canvas');const b=document.createElement('canvas');b.width=c.width;b.height=c.height;if(c.toDataURL()===b.toDataURL()){toast('⚠ Please draw your signature first');return;}}
+  else{if(!document.getElementById('sig-type-input')?.value?.trim()){toast('⚠ Please type your full name');return;}}
+  addAuditEntry(currentMatter,'DOCUMENT_SIGNED',document.getElementById('sign-modal-title')?.textContent||'Document');
+  closeModalById('sign-modal');toast('✍️ Signed — IP & timestamp recorded');
+}
+
+// ═══ KYC FLOW ═══
+function startKYCFlow(){
+  const b=document.getElementById('kyc-step-body');
+  if(b)b.innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">📷</div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Take a photo of your ID</div><div style="font-size:13px;color:var(--text2);margin-bottom:16px">Front of passport or driver licence</div><div style="margin:8px auto;padding:28px;background:var(--surface);border-radius:var(--radius);border:2px dashed var(--border2);cursor:pointer;font-size:13px;color:var(--text2);max-width:260px" onclick="kycStep2()">📸 Tap to open camera</div></div>';
+}
+function kycStep2(){
+  const b=document.getElementById('kyc-step-body');
+  if(b)b.innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">🤳</div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Liveness check</div><div style="font-size:13px;color:var(--text2);margin-bottom:16px">Look straight ahead and blink slowly</div><div style="margin:8px auto;padding:28px;background:var(--surface);border-radius:var(--radius);border:2px dashed var(--border2);cursor:pointer;font-size:13px;color:var(--text2);max-width:260px" onclick="completeKYC()">✓ Simulate completion</div></div>';
+}
+function completeKYC(){closeModalById('client-kyc-modal');toast('✓ KYC submitted — results within 2 minutes');}
+
+// ═══ MODALS ═══
+function openModal(id){
+  document.getElementById('modal-overlay').classList.add('open');
+  document.querySelectorAll('.modal').forEach(m=>m.style.display='none');
+  const m=document.getElementById(id);if(m)m.style.display='flex';
+  if(id==='sign-modal')setTimeout(initSigPad,120);
+}
+function closeModal(e){if(e.target===document.getElementById('modal-overlay'))document.getElementById('modal-overlay').classList.remove('open');}
+function closeModalById(){document.getElementById('modal-overlay').classList.remove('open');}
+
+// ═══ TASK MODAL ═══
+function ensureTaskModal(){
+  if(document.getElementById('add-task-modal'))return;
+  const d=document.createElement('div');d.className='modal modal-sm';d.id='add-task-modal';
+  d.innerHTML=`<div class="modal-header"><div class="modal-title">Add task</div><button class="modal-close" onclick="closeModalById()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Task title</label><input class="form-input" id="task-title-input" placeholder="e.g. Collect signed trust deed"></div><div class="form-group"><label class="form-label">Assign to</label><select class="form-select" id="task-assignee-input"><option>Emma Wilson</option><option>Michael Torres</option><option>Rachel Park</option><option>Sarah Chen</option></select></div><div class="form-group"><label class="form-label">Due date</label><input class="form-input" type="date" id="task-due-input"></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModalById()">Cancel</button><button class="btn btn-filled" onclick="saveTask()">Add task</button></div>`;
+  document.getElementById('modal-overlay').appendChild(d);
+}
+
+// ═══ TOAST ═══
+function toast(msg){
+  const t=document.getElementById('toast');if(!t)return;
+  t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ═══ INIT ═══
+document.addEventListener('DOMContentLoaded',()=>{
+  buildMatterDetail();
+  renderClientsTable(CLIENTS);
+  ensureTaskModal();
+  document.querySelectorAll('#panel-clients .search-input').forEach(el=>el.addEventListener('input',filterMatters));
+  document.querySelectorAll('#panel-clients .filter-select').forEach(el=>el.addEventListener('change',filterMatters));
+  document.querySelector('.global-search input')?.addEventListener('input',e=>runSearch(e.target.value));
+});
+</script>
+</body>
+</html>
