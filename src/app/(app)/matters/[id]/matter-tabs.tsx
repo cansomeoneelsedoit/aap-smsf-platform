@@ -14,6 +14,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import type { DocumentCategory, KycStatus, CheckResult, FileNoteType, FileNoteSource, FileNoteDraftStatus, DocumentSignStatus, MatterStage, TaskStatus, AuditActionType, PackageTier, TrusteeStructure } from "@prisma/client";
+import { formatDueDate, resolveReturnDueDate, targetCompletionDate } from "@/lib/dates";
 
 type MatterDTO = {
   id: string;
@@ -24,6 +25,7 @@ type MatterDTO = {
   acn: string | null;
   stage: MatterStage;
   establishmentDate: string | null;
+  returnDueDate: string | null;
   packageTier: PackageTier;
   trusteeStructure: TrusteeStructure;
   referrerName: string | null;
@@ -136,6 +138,20 @@ function OverviewTab({ matter }: { matter: MatterDTO }) {
                   ? new Date(matter.establishmentDate).toLocaleDateString("en-AU")
                   : "—"
               }
+            />
+            <FieldRow
+              label="Return due date"
+              value={
+                formatDueDate(
+                  resolveReturnDueDate(matter.returnDueDate ? new Date(matter.returnDueDate) : null),
+                ) + (matter.returnDueDate ? "" : " (default)")
+              }
+            />
+            <FieldRow
+              label="Target completion"
+              value={formatDueDate(
+                targetCompletionDate(matter.returnDueDate ? new Date(matter.returnDueDate) : null),
+              )}
             />
             <FieldRow label="Trustee structure" value={trusteeLabel(matter.trusteeStructure)} />
             <FieldRow label="Package" value={packageLabel(matter.packageTier)} />

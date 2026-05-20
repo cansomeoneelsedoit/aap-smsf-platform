@@ -8,6 +8,14 @@ import {
   stageLabel,
   stagePillClass,
 } from "@/lib/display";
+import {
+  alertLevel,
+  alertTone,
+  daysUntil,
+  formatDueDate,
+  resolveReturnDueDate,
+  targetCompletionDate,
+} from "@/lib/dates";
 
 const STAGE_FILTERS: (MatterStage | "ALL")[] = [
   "ALL",
@@ -87,7 +95,7 @@ export default async function MattersPage({
         <table className="w-full">
           <thead>
             <tr>
-              {["Client / Fund", "Company", "Type", "Stage", "Owner", "Due"].map((h) => (
+              {["Client / Fund", "Company", "Type", "Stage", "Owner", "Return due"].map((h) => (
                 <th
                   key={h}
                   className="border-b bg-[color:var(--color-aap-surface)] px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-[0.06em] text-[color:var(--color-aap-text3)]"
@@ -110,6 +118,12 @@ export default async function MattersPage({
             ) : (
               matters.map((m) => {
                 const owner = m.stageAssignments.find((a) => a.stage === m.stage)?.staff;
+                const now = new Date();
+                const lvl = alertLevel(m.stage, m.returnDueDate, now);
+                const due = resolveReturnDueDate(m.returnDueDate, now);
+                const target = targetCompletionDate(m.returnDueDate, now);
+                const tone = alertTone(lvl);
+                const days = daysUntil(target, now);
                 return (
                   <tr
                     key={m.id}
@@ -138,7 +152,20 @@ export default async function MattersPage({
                     <td className="px-4 py-3 text-[13px]">
                       {owner?.user.name ? shortName(owner.user.name) : "Unassigned"}
                     </td>
-                    <td className="px-4 py-3 text-[13px] text-[color:var(--color-aap-text2)]">—</td>
+                    <td className="px-4 py-3 text-[12px]">
+                      <div>{formatDueDate(due)}</div>
+                      <div className="text-[10px]" style={{ color: tone.fg }}>
+                        {lvl === "COMPLETE"
+                          ? "Active"
+                          : lvl === "OVERDUE"
+                          ? `Target ${Math.abs(days)}d overdue`
+                          : lvl === "DUE_SOON"
+                          ? `Target in ${days}d`
+                          : lvl === "APPROACHING"
+                          ? `Target in ${days}d`
+                          : `Target in ${days}d`}
+                      </div>
+                    </td>
                   </tr>
                 );
               })

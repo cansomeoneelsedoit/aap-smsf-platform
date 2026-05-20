@@ -325,6 +325,10 @@ model Matter {
   tfn               String?
   acn               String?
   establishmentDate DateTime?        @map("establishment_date")
+  // The ATO / ASIC return due date for this fund (lodgement deadline is
+  // typically 15 May; we default this to 1 May so there is a 2-week buffer).
+  // Target completion is calculated as `returnDueDate - 2 months`.
+  returnDueDate     DateTime?        @map("return_due_date")
   referrerName      String?          @map("referrer_name")
   companyGroupId    String?          @map("company_group_id")
   primaryContactId  String?          @map("primary_contact_id")

@@ -151,8 +151,14 @@ async function main() {
     ownerStaffRole: StaffRole;
     handoffPending?: boolean;
     daysAgo: number;
+    /** ATO/ASIC return due date. Omit to use the default 1 May rule. */
+    returnDueDate?: Date;
   };
 
+  // Today is 2026-05-21 per CLAUDE memory, so 1 May 2026 produced an overdue
+  // target completion date (1 March 2026). 1 May 2027 → target 1 March 2027.
+  // We mix the dates intentionally so the Alerts page shows OVERDUE, DUE_SOON,
+  // APPROACHING and ON_TRACK rows out of the box.
   const matterSeeds: MatterSeed[] = [
     {
       ref: "M001",
@@ -170,6 +176,8 @@ async function main() {
       ],
       ownerStaffRole: StaffRole.COMPLIANCE_OFFICER,
       daysAgo: 14,
+      // Due 1 May 2026 (past) — target completion was 1 Mar 2026 → OVERDUE.
+      returnDueDate: new Date(Date.UTC(2026, 4, 1)),
     },
     {
       ref: "M002",
@@ -183,6 +191,8 @@ async function main() {
       ownerStaffRole: StaffRole.BOOKKEEPER,
       handoffPending: true,
       daysAgo: 9,
+      // Default rule (left blank) → 1 May 2027 → target 1 Mar 2027 → ON_TRACK
+      // (over 9 months out).
     },
     {
       ref: "M003",
@@ -198,6 +208,8 @@ async function main() {
       ownerStaffRole: StaffRole.TAX_AGENT,
       handoffPending: true,
       daysAgo: 30,
+      // Due 15 Jul 2026 → target 15 May 2026 → DUE_SOON (within 14 days).
+      returnDueDate: new Date(Date.UTC(2026, 6, 15)),
     },
     {
       ref: "M004",
@@ -210,6 +222,7 @@ async function main() {
       members: [{ first: "Alex", last: "Brown", email: "alex@example.com", isTrustee: true, primary: true }],
       ownerStaffRole: StaffRole.BOOKKEEPER,
       daysAgo: 2,
+      // Default rule → ON_TRACK
     },
     {
       ref: "M005",
@@ -223,6 +236,8 @@ async function main() {
       members: [{ first: "Wei", last: "Chen", email: "wei@example.com", isTrustee: true, primary: true }],
       ownerStaffRole: StaffRole.MASTER_OWNER,
       daysAgo: 180,
+      // ACTIVE = COMPLETE alert level regardless of due date
+      returnDueDate: new Date(Date.UTC(2026, 4, 1)),
     },
     {
       ref: "M006",
@@ -235,6 +250,8 @@ async function main() {
       members: [{ first: "Ben", last: "Davis", email: "ben@example.com", isTrustee: true, primary: true }],
       ownerStaffRole: StaffRole.MASTER_OWNER,
       daysAgo: 21,
+      // Due 15 Aug 2026 → target 15 Jun 2026 → APPROACHING (~25 days out).
+      returnDueDate: new Date(Date.UTC(2026, 7, 15)),
     },
   ];
 
@@ -242,7 +259,7 @@ async function main() {
     const createdAt = new Date(Date.now() - ms.daysAgo * 86400_000);
     const matter = await prisma.matter.upsert({
       where: { matterRef: ms.ref },
-      update: { stage: ms.stage },
+      update: { stage: ms.stage, returnDueDate: ms.returnDueDate ?? null },
       create: {
         matterRef: ms.ref,
         fundName: ms.fundName,
@@ -253,6 +270,7 @@ async function main() {
         abn: ms.abn,
         acn: ms.acn,
         establishmentDate: createdAt,
+        returnDueDate: ms.returnDueDate ?? null,
         companyGroupId: ms.company,
         primaryContactId: ms.primaryContactId ?? null,
         createdAt,

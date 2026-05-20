@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MatterStage, HandoffStatus, KycStatus } from "@prisma/client";
-import { Bell, ArrowRight, FileText, Phone, UserPlus, CheckCircle2 } from "lucide-react";
+import { Bell, ArrowRight, FileText, Phone, UserPlus, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import {
@@ -10,6 +10,7 @@ import {
   stageLabel,
   stagePillClass,
 } from "@/lib/display";
+import { alertLevel } from "@/lib/dates";
 
 const STAGE_ORDER: MatterStage[] = [
   MatterStage.START,
@@ -53,9 +54,10 @@ export default async function DashboardPage() {
     prisma.kycCheck.count({
       where: { status: { in: [KycStatus.IN_PROGRESS, KycStatus.REVIEW, KycStatus.NOT_STARTED] } },
     }),
-    prisma.matter.findMany({ select: { stage: true } }),
+    prisma.matter.findMany({ select: { stage: true, returnDueDate: true } }),
   ]);
 
+  const now = new Date();
   const totalClients = allMatters.length;
   const stageCounts: Record<MatterStage, number> = {
     START: 0,
@@ -64,13 +66,63 @@ export default async function DashboardPage() {
     LODGE: 0,
     ACTIVE: 0,
   };
-  for (const m of allMatters) stageCounts[m.stage]++;
+  let overdueCount = 0;
+  let dueSoonCount = 0;
+  for (const m of allMatters) {
+    stageCounts[m.stage]++;
+    const lvl = alertLevel(m.stage, m.returnDueDate, now);
+    if (lvl === "OVERDUE") overdueCount++;
+    else if (lvl === "DUE_SOON") dueSoonCount++;
+  }
 
   return (
     <div className="space-y-5">
+      {/* OVERDUE / DUE-SOON CALL-OUT */}
+      {overdueCount + dueSoonCount > 0 ? (
+        <Link
+          href="/alerts"
+          className="flex items-center gap-3 rounded-xl border-[1.5px] bg-white px-5 py-4 transition-colors hover:shadow-md"
+          style={{
+            borderColor: overdueCount > 0 ? "#dc2626" : "#d97706",
+            background: overdueCount > 0 ? "#fee2e2" : "#fef3c7",
+          }}
+        >
+          {overdueCount > 0 ? (
+            <AlertTriangle className="h-5 w-5 text-[color:var(--color-aap-red)]" />
+          ) : (
+            <Clock className="h-5 w-5 text-[color:var(--color-aap-amber)]" />
+          )}
+          <div className="flex-1">
+            <div
+              className="text-[13px] font-bold"
+              style={{ color: overdueCount > 0 ? "#dc2626" : "#d97706" }}
+            >
+              {overdueCount > 0
+                ? `${overdueCount} matter${overdueCount === 1 ? "" : "s"} OVERDUE`
+                : `${dueSoonCount} matter${dueSoonCount === 1 ? "" : "s"} due within 2 weeks`}
+              {overdueCount > 0 && dueSoonCount > 0
+                ? ` · ${dueSoonCount} more due within 2 weeks`
+                : ""}
+            </div>
+            <div className="text-[12px] text-[color:var(--color-aap-text2)]">
+              Target completion is set to 2 months before each fund&apos;s return due date.
+              Funds without an explicit date default to <strong>1 May</strong>.
+            </div>
+          </div>
+          <span className="rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[color:var(--color-aap-dark)] shadow-sm">
+            Open alerts →
+          </span>
+        </Link>
+      ) : null}
+
       {/* STAT CARDS */}
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
-        <StatCard label="Total clients" value={totalClients} tagText={`${totalClients} on file`} tagTone="orange" />
+        <StatCard
+          label="Overdue returns"
+          value={overdueCount}
+          tagText={overdueCount > 0 ? "Action required" : "All clear"}
+          tagTone={overdueCount > 0 ? "red" : "green"}
+        />
         <StatCard
           label="Pending handoffs"
           value={pendingHandoffs.length}
@@ -78,7 +130,12 @@ export default async function DashboardPage() {
           tagTone="amber"
         />
         <StatCard label="KYC pending" value={pendingKyc} tagText="In review" tagTone="red" />
-        <StatCard label="Call notes to approve" value={0} tagText="Draft ready" tagTone="purple" />
+        <StatCard
+          label="Total clients"
+          value={totalClients}
+          tagText={`${totalClients} on file`}
+          tagTone="orange"
+        />
       </div>
 
       {/* STAGE TILES */}

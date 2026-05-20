@@ -14,6 +14,7 @@ import {
   staffRoleLabel,
 } from "@/lib/display";
 import { MatterTabs } from "./matter-tabs";
+import { DueDateCard } from "./due-date-card";
 
 const STAGE_ORDER: MatterStage[] = [
   MatterStage.START,
@@ -168,6 +169,16 @@ export default async function MatterDetailPage({
         })}
       </div>
 
+      {/* RETURN DUE DATE */}
+      <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
+        <div />
+        <DueDateCard
+          matterId={matter.id}
+          stage={matter.stage}
+          returnDueDate={matter.returnDueDate?.toISOString() ?? null}
+        />
+      </div>
+
       {/* HANDOFF ALERT */}
       {currentOwner && matter.stageAssignments.find((a) => a.stage === matter.stage)?.handoffStatus === HandoffStatus.PENDING ? (
         <div className="aap-handoff-panel">
@@ -202,6 +213,7 @@ export default async function MatterDetailPage({
           acn: matter.acn,
           stage: matter.stage,
           establishmentDate: matter.establishmentDate?.toISOString() ?? null,
+          returnDueDate: matter.returnDueDate?.toISOString() ?? null,
           packageTier: matter.packageTier,
           trusteeStructure: matter.trusteeStructure,
           referrerName: matter.referrerName,

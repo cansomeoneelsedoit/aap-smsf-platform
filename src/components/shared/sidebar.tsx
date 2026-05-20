@@ -13,57 +13,125 @@ import {
   UserCog,
   Bell,
   ScrollText,
+  AlertTriangle,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { SmsfRole } from "@/auth.config";
 import { AapLogo } from "./aap-logo";
 
+type Tone = "orange" | "amber" | "green" | "purple" | "red";
+
 type NavItem = {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge?: { text: string; tone: "orange" | "amber" | "green" | "purple" };
+  count?: number;
+  tone?: Tone;
   roles?: SmsfRole[];
 };
 
 type NavSection = { label: string; items: NavItem[] };
 
-const SECTIONS: NavSection[] = [
-  {
-    label: "Main",
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/matters", label: "Clients", icon: Users, badge: { text: "12", tone: "orange" } },
-      { href: "/companies", label: "Companies", icon: Building2 },
-    ],
-  },
-  {
-    label: "Queues",
-    items: [
-      { href: "/queues/preparation", label: "Preparation", icon: ClipboardCheck, badge: { text: "4", tone: "purple" } },
-      { href: "/queues/compliance", label: "Compliance", icon: ShieldCheck, badge: { text: "3", tone: "amber" } },
-      { href: "/queues/lodgement", label: "Lodgement", icon: ArrowUpRight, badge: { text: "2", tone: "green" } },
-    ],
-  },
-  {
-    label: "Tools",
-    items: [
-      { href: "/kyc", label: "KYC", icon: IdCard },
-    ],
-  },
-  {
-    label: "Admin",
-    items: [
-      { href: "/staff", label: "Staff Profiles", icon: UserCog },
-      { href: "/notifications", label: "Notifications", icon: Bell, badge: { text: "5", tone: "orange" } },
-      { href: "/audit", label: "Audit Log", icon: ScrollText, roles: ["SUPERUSER"] },
-    ],
-  },
-];
+export type SidebarCounts = {
+  clients: number;
+  preparation: number;
+  compliance: number;
+  lodgement: number;
+  notifications: number;
+  /** Overdue alerts — surfaces as a red badge next to "Alerts". */
+  alertsOverdue: number;
+  /** Total non-COMPLETE alerts (Overdue + Due soon + Approaching). */
+  alertsActive: number;
+};
 
-export function Sidebar({ role, name, initials, color }: { role: SmsfRole; name: string; initials: string; color: string }) {
+function sections(counts: SidebarCounts): NavSection[] {
+  return [
+    {
+      label: "Main",
+      items: [
+        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          href: "/alerts",
+          label: "Alerts",
+          icon: AlertTriangle,
+          count: counts.alertsOverdue || counts.alertsActive,
+          tone: counts.alertsOverdue > 0 ? "red" : counts.alertsActive > 0 ? "amber" : undefined,
+        },
+        { href: "/matters", label: "Clients", icon: Users, count: counts.clients, tone: "orange" },
+        { href: "/companies", label: "Companies", icon: Building2 },
+      ],
+    },
+    {
+      label: "Queues",
+      items: [
+        {
+          href: "/queues/preparation",
+          label: "Preparation",
+          icon: ClipboardCheck,
+          count: counts.preparation,
+          tone: "purple",
+        },
+        {
+          href: "/queues/compliance",
+          label: "Compliance",
+          icon: ShieldCheck,
+          count: counts.compliance,
+          tone: "amber",
+        },
+        {
+          href: "/queues/lodgement",
+          label: "Lodgement",
+          icon: ArrowUpRight,
+          count: counts.lodgement,
+          tone: "green",
+        },
+      ],
+    },
+    {
+      label: "Tools",
+      items: [{ href: "/kyc", label: "KYC", icon: IdCard }],
+    },
+    {
+      label: "Admin",
+      items: [
+        { href: "/staff", label: "Staff Profiles", icon: UserCog },
+        {
+          href: "/notifications",
+          label: "Notifications",
+          icon: Bell,
+          count: counts.notifications,
+          tone: "orange",
+        },
+        { href: "/audit", label: "Audit Log", icon: ScrollText, roles: ["SUPERUSER"] },
+      ],
+    },
+  ];
+}
+
+const TONE_BG: Record<Tone, string> = {
+  orange: "bg-[color:var(--color-aap-orange)]",
+  amber: "bg-[color:var(--color-aap-amber)]",
+  green: "bg-[color:var(--color-aap-green)]",
+  purple: "bg-[color:var(--color-aap-purple)]",
+  red: "bg-[color:var(--color-aap-red)]",
+};
+
+export function Sidebar({
+  role,
+  name,
+  initials,
+  color,
+  counts,
+}: {
+  role: SmsfRole;
+  name: string;
+  initials: string;
+  color: string;
+  counts: SidebarCounts;
+}) {
   const pathname = usePathname();
+  const SECTIONS = sections(counts);
   return (
     <aside className="hidden h-screen w-60 shrink-0 flex-col border-r bg-white md:flex sticky top-0">
       <div className="flex items-center gap-2 border-b px-4 py-[18px]">
@@ -84,6 +152,7 @@ export function Sidebar({ role, name, initials, color }: { role: SmsfRole; name:
               .map((item) => {
                 const active = pathname === item.href || pathname.startsWith(item.href + "/");
                 const Icon = item.icon;
+                const showBadge = item.count && item.count > 0 && item.tone;
                 return (
                   <Link
                     key={item.href}
@@ -97,17 +166,14 @@ export function Sidebar({ role, name, initials, color }: { role: SmsfRole; name:
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     <span className="flex-1">{item.label}</span>
-                    {item.badge ? (
+                    {showBadge ? (
                       <span
                         className={cn(
                           "ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white",
-                          item.badge.tone === "orange" && "bg-[color:var(--color-aap-orange)]",
-                          item.badge.tone === "amber" && "bg-[color:var(--color-aap-amber)]",
-                          item.badge.tone === "green" && "bg-[color:var(--color-aap-green)]",
-                          item.badge.tone === "purple" && "bg-[color:var(--color-aap-purple)]",
+                          TONE_BG[item.tone!],
                         )}
                       >
-                        {item.badge.text}
+                        {item.count}
                       </span>
                     ) : null}
                   </Link>

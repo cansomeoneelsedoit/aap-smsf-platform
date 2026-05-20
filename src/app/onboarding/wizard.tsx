@@ -42,6 +42,7 @@ export function OnboardingWizard() {
     abn: "",
     tfn: "",
     establishmentDate: "2026-01-15",
+    returnDueDate: "", // empty = use 1 May default
     companyGroup: "",
     referrerName: "",
   });
@@ -87,6 +88,7 @@ export function OnboardingWizard() {
     fd.set("tfn", fund.tfn);
     fd.set("referrerName", fund.referrerName);
     fd.set("establishmentDate", fund.establishmentDate);
+    fd.set("returnDueDate", fund.returnDueDate);
     members.forEach((m, i) => {
       const idx = i + 1;
       fd.set(`members.${idx}.firstName`, m.firstName);
@@ -254,6 +256,14 @@ export function OnboardingWizard() {
                   className="w-full rounded-lg border-[1.5px] border-[color:var(--color-aap-surface2)] px-3 py-2.5 text-sm focus:border-[color:var(--color-aap-orange)] focus:outline-none"
                   value={fund.establishmentDate}
                   onChange={(e) => setFund({ ...fund, establishmentDate: e.target.value })}
+                />
+              </Field>
+              <Field label="Return due date (optional — defaults to 1 May)">
+                <input
+                  type="date"
+                  className="w-full rounded-lg border-[1.5px] border-[color:var(--color-aap-surface2)] px-3 py-2.5 text-sm focus:border-[color:var(--color-aap-orange)] focus:outline-none"
+                  value={fund.returnDueDate}
+                  onChange={(e) => setFund({ ...fund, returnDueDate: e.target.value })}
                 />
               </Field>
               <Field label="Fund type">

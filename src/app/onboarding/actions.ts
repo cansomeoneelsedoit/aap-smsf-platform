@@ -15,6 +15,7 @@ import {
   CompanyGroupType,
   StaffRole,
 } from "@prisma/client";
+import { defaultReturnDueDate } from "@/lib/dates";
 
 const submissionSchema = z.object({
   service: z.enum(["full-service", "byoa"]),
@@ -27,6 +28,7 @@ const submissionSchema = z.object({
   tfn: z.string().optional(),
   referrerName: z.string().optional(),
   establishmentDate: z.string().optional(),
+  returnDueDate: z.string().optional(),
   members: z
     .array(
       z.object({
@@ -52,6 +54,7 @@ export async function submitOnboarding(formData: FormData) {
     tfn: formData.get("tfn")?.toString() ?? "",
     referrerName: formData.get("referrerName")?.toString() ?? "",
     establishmentDate: formData.get("establishmentDate")?.toString() ?? "",
+    returnDueDate: formData.get("returnDueDate")?.toString() ?? "",
     members: [] as Array<{ firstName: string; lastName: string; email: string; mobile: string }>,
   };
   // Parse member rows (1..6)
@@ -108,6 +111,9 @@ export async function submitOnboarding(formData: FormData) {
       tfn: data.tfn || null,
       referrerName: data.referrerName || null,
       establishmentDate: data.establishmentDate ? new Date(data.establishmentDate) : null,
+      // If the client didn't supply a due date, fall through to the 1 May
+      // default at read time by leaving this null. (Stored null = "use default".)
+      returnDueDate: data.returnDueDate ? new Date(data.returnDueDate) : null,
       companyGroupId,
       members: {
         create: data.members.map((m) => ({
