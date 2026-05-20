@@ -48,3 +48,6 @@ next-env.d.ts
 
 # v4 reference (kept locally during build, not committed)
 v4-reference.html.bak
+
+# Dev server log file
+.dev.log
