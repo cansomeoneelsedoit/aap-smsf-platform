@@ -1,0 +1,574 @@
+// SMSF Echo — Prisma schema
+//
+// Derived from the v4 prototype's domain model (5-stage matter workflow,
+// role-based staff/client portal, KYC, document management, file notes with
+// 3CX/Echo Notes integration, signature events, audit log).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Auth.js (NextAuth v5) Prisma adapter models
+// ============================================================================
+
+enum UserRole {
+  SUPERUSER
+  STAFF
+  CLIENT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  passwordHash  String?   @map("password_hash")
+  role          UserRole  @default(STAFF)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  accounts     Account[]
+  sessions     Session[]
+  staff        Staff?
+  client       Client?
+  auditActions AuditAction[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================================================
+// SMSF Echo domain
+// ============================================================================
+
+enum StaffRole {
+  MASTER_OWNER
+  BOOKKEEPER
+  COMPLIANCE_OFFICER
+  TAX_AGENT
+  ADMIN
+}
+
+enum CompanyGroupType {
+  REFERRER
+  INTERNAL
+  PARTNER
+}
+
+enum MatterStage {
+  START
+  PREPARE
+  CHECK
+  LODGE
+  ACTIVE
+}
+
+enum MatterType {
+  NEW_SMSF_SETUP
+  EXISTING_ONBOARDING
+  CORPORATE_TRUSTEE_SETUP
+}
+
+enum TrusteeStructure {
+  INDIVIDUAL
+  CORPORATE
+}
+
+enum HandoffStatus {
+  PENDING
+  ACCEPTED
+  COMPLETED
+}
+
+enum KycStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  PASSED
+  REVIEW
+  FAILED
+}
+
+enum CheckResult {
+  PASS
+  FAIL
+  CLEAR
+  FLAG
+  RUNNING
+}
+
+enum KycProvider {
+  AAP_NATIVE
+  EXTERNAL
+}
+
+enum DocumentCategory {
+  TRUST_DEED_ESTABLISHMENT
+  KYC_IDENTITY
+  ATO_CORRESPONDENCE
+  ASIC_CORRESPONDENCE
+  TAX_RETURN
+  FINANCIAL_STATEMENTS
+  AUDIT_REPORT
+  SIGNED_AGREEMENT
+  OTHER
+}
+
+enum DocumentSignStatus {
+  NOT_REQUIRED
+  AWAITING_SIGNATURE
+  SIGNED
+  VERIFIED
+}
+
+enum FileNoteType {
+  CALL
+  EMAIL
+  MEETING
+  INTERNAL
+  SYSTEM
+}
+
+enum FileNoteSource {
+  MANUAL
+  THREE_CX
+  ECHO_NOTES
+  BIZ_GPT
+}
+
+enum FileNoteDraftStatus {
+  DRAFT
+  PENDING_APPROVAL
+  PUBLISHED
+}
+
+enum SignatureMode {
+  DRAW
+  TYPE
+}
+
+enum AuditActionType {
+  MATTER_CREATED
+  STAGE_ADVANCE
+  HANDOFF_ACCEPTED
+  REASSIGNED
+  KYC_LINK_SENT
+  KYC_APPROVED
+  CALL_INITIATED
+  CALL_ENDED
+  CALL_NOTE_RECEIVED
+  CALL_NOTE_APPROVED
+  FILE_NOTE_ADDED
+  FILE_NOTE_APPROVED
+  DOCUMENT_UPLOAD
+  DOCUMENT_SIGNED
+  MESSAGE_SENT
+  MESSAGE_SENT_CLIENT
+  TASK_ADDED
+  TASK_COMPLETED
+  LODGEMENT_SUBMITTED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  BLOCKED
+}
+
+enum PackageTier {
+  DEFAULT_PLUS_ACCOUNTING
+  UNLISTED_ASSETS
+  BYOA
+}
+
+// ----------------------------------------------------------------------------
+// CompanyGroup — referrer firms (e.g. Clime ASX, Liberty, RiverX, AAP)
+// ----------------------------------------------------------------------------
+
+model CompanyGroup {
+  id           String           @id @default(cuid())
+  name         String
+  type         CompanyGroupType @default(REFERRER)
+  logoUrl      String?          @map("logo_url")
+  contactName  String?          @map("contact_name")
+  contactEmail String?          @map("contact_email")
+  contactPhone String?          @map("contact_phone")
+  notes        String?
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  staff   Staff[]
+  matters Matter[]
+
+  @@map("company_groups")
+}
+
+// ----------------------------------------------------------------------------
+// Staff — team members (one-to-one with User)
+// ----------------------------------------------------------------------------
+
+model Staff {
+  id              String     @id @default(cuid())
+  userId          String     @unique @map("user_id")
+  role            StaffRole
+  experienceYears Int?       @map("experience_years")
+  bio             String?
+  hobbies         String?
+  pets            String?
+  photoUrl        String?    @map("photo_url")
+  phone           String?
+  extension       String?
+  smtpHost        String?    @map("smtp_host")
+  smtpPort        Int?       @map("smtp_port")
+  smtpUser        String?    @map("smtp_user")
+  smtpPassEnc     String?    @map("smtp_pass_enc")
+  imapHost        String?    @map("imap_host")
+  imapPort        Int?       @map("imap_port")
+  companyGroupId  String?    @map("company_group_id")
+  active          Boolean    @default(true)
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyGroup     CompanyGroup?     @relation(fields: [companyGroupId], references: [id])
+  stageAssignments StageAssignment[]
+  fileNotes        FileNote[]
+  documents        Document[]
+  tasks            Task[]
+
+  @@map("staff")
+}
+
+// ----------------------------------------------------------------------------
+// Client — represents the human client; one-to-one with User. Distinct from
+// the Matter/SMSF Fund (a User can own multiple Matters).
+// ----------------------------------------------------------------------------
+
+model Client {
+  id           String   @id @default(cuid())
+  userId       String   @unique @map("user_id")
+  fullName     String   @map("full_name")
+  email        String
+  phone        String?
+  dateOfBirth  DateTime? @map("date_of_birth")
+  tfn          String?
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matters  Matter[]  @relation("MatterPrimaryContact")
+  members  Member[]
+
+  @@map("clients")
+}
+
+// ----------------------------------------------------------------------------
+// Matter — the SMSF case being administered (matter_ref M001, etc.)
+// ----------------------------------------------------------------------------
+
+model Matter {
+  id                String           @id @default(cuid())
+  matterRef         String           @unique @map("matter_ref")
+  fundName          String           @map("fund_name")
+  stage             MatterStage      @default(START)
+  matterType        MatterType       @map("matter_type")
+  packageTier       PackageTier      @map("package_tier")
+  trusteeStructure  TrusteeStructure @map("trustee_structure")
+  abn               String?
+  tfn               String?
+  acn               String?
+  establishmentDate DateTime?        @map("establishment_date")
+  referrerName      String?          @map("referrer_name")
+  companyGroupId    String?          @map("company_group_id")
+  primaryContactId  String?          @map("primary_contact_id")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  companyGroup       CompanyGroup?       @relation(fields: [companyGroupId], references: [id])
+  primaryContact     Client?             @relation("MatterPrimaryContact", fields: [primaryContactId], references: [id])
+  members            Member[]
+  stageAssignments   StageAssignment[]
+  documents          Document[]
+  fileNotes          FileNote[]
+  kycChecks          KycCheck[]
+  signatureRequests  SignatureRequest[]
+  auditActions       AuditAction[]
+  tasks              Task[]
+  onboardingSubmission OnboardingSubmission?
+
+  @@index([stage])
+  @@index([companyGroupId])
+  @@map("matters")
+}
+
+// ----------------------------------------------------------------------------
+// Member — fund members / trustees on a Matter (up to 6 from onboarding)
+// ----------------------------------------------------------------------------
+
+model Member {
+  id          String    @id @default(cuid())
+  matterId    String    @map("matter_id")
+  clientId    String?   @map("client_id")
+  firstName   String    @map("first_name")
+  lastName    String    @map("last_name")
+  email       String?
+  mobile      String?
+  dateOfBirth DateTime? @map("date_of_birth")
+  tfn         String?
+  isTrustee   Boolean   @default(true) @map("is_trustee")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  matter Matter  @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  client Client? @relation(fields: [clientId], references: [id])
+
+  @@index([matterId])
+  @@map("members")
+}
+
+// ----------------------------------------------------------------------------
+// StageAssignment — which Staff owns which stage of which Matter, including
+// the handoff state when the stage advances.
+// ----------------------------------------------------------------------------
+
+model StageAssignment {
+  id            String        @id @default(cuid())
+  matterId      String        @map("matter_id")
+  stage         MatterStage
+  staffId       String        @map("staff_id")
+  handoffStatus HandoffStatus @default(PENDING) @map("handoff_status")
+  startedAt     DateTime      @default(now()) @map("started_at")
+  acceptedAt    DateTime?     @map("accepted_at")
+  completedAt   DateTime?     @map("completed_at")
+
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  staff  Staff  @relation(fields: [staffId], references: [id])
+
+  @@unique([matterId, stage])
+  @@map("stage_assignments")
+}
+
+// ----------------------------------------------------------------------------
+// KycCheck — KYC results for a Member (identity + liveness + adverse media)
+// ----------------------------------------------------------------------------
+
+model KycCheck {
+  id            String      @id @default(cuid())
+  matterId      String      @map("matter_id")
+  memberName    String      @map("member_name")
+  status        KycStatus   @default(NOT_STARTED)
+  identityCheck CheckResult? @map("identity_check")
+  livenessCheck CheckResult? @map("liveness_check")
+  adverseMedia  CheckResult? @map("adverse_media")
+  provider      KycProvider @default(AAP_NATIVE)
+  evidenceUrls  String[]    @map("evidence_urls")
+  startedAt     DateTime?   @map("started_at")
+  completedAt   DateTime?   @map("completed_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([matterId])
+  @@map("kyc_checks")
+}
+
+// ----------------------------------------------------------------------------
+// Document — uploaded files attached to a Matter, organized by year + type
+// ----------------------------------------------------------------------------
+
+model Document {
+  id            String             @id @default(cuid())
+  matterId      String             @map("matter_id")
+  fileName      String             @map("file_name")
+  fileKey       String             @map("file_key")
+  fileSize      Int                @map("file_size")
+  category      DocumentCategory
+  financialYear String?            @map("financial_year") // e.g. "FY2026"
+  signStatus    DocumentSignStatus @default(NOT_REQUIRED) @map("sign_status")
+  uploadedById  String?            @map("uploaded_by_id")
+  uploadedAt    DateTime           @default(now()) @map("uploaded_at")
+
+  matter     Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  uploadedBy Staff? @relation(fields: [uploadedById], references: [id])
+  signatureRequests SignatureRequest[]
+
+  @@index([matterId])
+  @@index([category])
+  @@map("documents")
+}
+
+// ----------------------------------------------------------------------------
+// FileNote — call notes, emails, meeting notes; can be sourced from 3CX /
+// Echo Notes / BizGPT integrations.
+// ----------------------------------------------------------------------------
+
+model FileNote {
+  id              String              @id @default(cuid())
+  matterId        String              @map("matter_id")
+  authorStaffId   String?             @map("author_staff_id")
+  type            FileNoteType
+  source          FileNoteSource      @default(MANUAL)
+  subject         String
+  body            String              @db.Text
+  tags            String[]
+  pinned          Boolean             @default(false)
+  draftStatus     FileNoteDraftStatus @default(PUBLISHED) @map("draft_status")
+  // 3CX / Echo Notes call metadata (only set when source != MANUAL)
+  threeCxRef      String?             @map("three_cx_ref")
+  echoNotesRef    String?             @map("echo_notes_ref")
+  bizGptRef       String?             @map("biz_gpt_ref")
+  callDurationSec Int?                @map("call_duration_sec")
+  recordingUrl    String?             @map("recording_url")
+  transcriptUrl   String?             @map("transcript_url")
+  createdAt       DateTime            @default(now()) @map("created_at")
+
+  matter      Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  authorStaff Staff? @relation(fields: [authorStaffId], references: [id])
+
+  @@index([matterId])
+  @@map("file_notes")
+}
+
+// ----------------------------------------------------------------------------
+// SignatureRequest — request a signature on a document. SignatureEvent
+// captures the actual signing (with IP + timestamp for audit).
+// ----------------------------------------------------------------------------
+
+model SignatureRequest {
+  id           String    @id @default(cuid())
+  matterId     String    @map("matter_id")
+  documentId   String?   @map("document_id")
+  documentName String    @map("document_name")
+  signatoryEmail String  @map("signatory_email")
+  signatoryName  String  @map("signatory_name")
+  requestedAt  DateTime  @default(now()) @map("requested_at")
+  completedAt  DateTime? @map("completed_at")
+
+  matter   Matter   @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  document Document? @relation(fields: [documentId], references: [id])
+  events   SignatureEvent[]
+
+  @@map("signature_requests")
+}
+
+model SignatureEvent {
+  id            String        @id @default(cuid())
+  requestId     String        @map("request_id")
+  mode          SignatureMode
+  signatureData String        @db.Text @map("signature_data") // base64 PNG or typed name
+  ipAddress     String        @map("ip_address")
+  userAgent     String?       @map("user_agent")
+  signedAt      DateTime      @default(now()) @map("signed_at")
+
+  request SignatureRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@map("signature_events")
+}
+
+// ----------------------------------------------------------------------------
+// AuditAction — immutable record of every meaningful action.
+// ----------------------------------------------------------------------------
+
+model AuditAction {
+  id         String          @id @default(cuid())
+  matterId   String?         @map("matter_id")
+  userId     String?         @map("user_id")
+  action     AuditActionType
+  details    String?         @db.Text
+  entityType String?         @map("entity_type")
+  entityId   String?         @map("entity_id")
+  ipAddress  String?         @map("ip_address")
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  matter Matter? @relation(fields: [matterId], references: [id], onDelete: SetNull)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([matterId])
+  @@index([userId])
+  @@index([action])
+  @@map("audit_actions")
+}
+
+// ----------------------------------------------------------------------------
+// Task — work items assigned to staff, attached to a Matter.
+// ----------------------------------------------------------------------------
+
+model Task {
+  id            String     @id @default(cuid())
+  matterId      String     @map("matter_id")
+  assignedStaffId String?  @map("assigned_staff_id")
+  title         String
+  description   String?    @db.Text
+  status        TaskStatus @default(PENDING)
+  dueDate       DateTime?  @map("due_date")
+  completedAt   DateTime?  @map("completed_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  matter        Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  assignedStaff Staff? @relation(fields: [assignedStaffId], references: [id])
+
+  @@index([matterId])
+  @@map("tasks")
+}
+
+// ----------------------------------------------------------------------------
+// OnboardingSubmission — raw payload from the 5-step onboarding wizard.
+// One per Matter (the matter is created when the submission is finalized).
+// ----------------------------------------------------------------------------
+
+model OnboardingSubmission {
+  id         String   @id @default(cuid())
+  matterId   String   @unique @map("matter_id")
+  payload    Json
+  submittedAt DateTime @default(now()) @map("submitted_at")
+
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@map("onboarding_submissions")
+}
