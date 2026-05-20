@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { LogOut, Plus, Search, User as UserIcon } from "lucide-react";
 
@@ -41,12 +42,12 @@ export function Topbar({
       </div>
       <div className="ml-auto flex items-center gap-2">
         <ThemeToggle />
-        <button
-          type="button"
+        <Link
+          href="/onboarding"
           className="hidden h-9 items-center gap-1.5 rounded-lg border border-[color:var(--color-aap-surface2)] bg-white px-3 text-[13px] font-semibold text-[color:var(--color-aap-text2)] hover:border-[color:var(--color-aap-orange)] hover:text-[color:var(--color-aap-orange)] sm:inline-flex"
         >
           <Plus className="h-3.5 w-3.5" /> New client
-        </button>
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm hover:bg-muted">
             <UserIcon className="h-4 w-4" />

@@ -10,6 +10,8 @@ import { initialsFromName, staffColorForRole } from "@/lib/display";
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/signin");
+  // Client portal users shouldn't see the staff app — bounce them to /portal.
+  if (session.user.role === "CLIENT") redirect("/portal");
 
   const staff = session.user.id
     ? await prisma.staff.findUnique({ where: { userId: session.user.id } })

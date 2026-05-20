@@ -12,6 +12,8 @@ import { Card, CardContent } from "@/components/ui/card";
 export function SigninForm() {
   const router = useRouter();
   const params = useSearchParams();
+  // Default landing is /dashboard for staff. For client portal users the
+  // /dashboard layout redirects to /portal on first paint.
   const callbackUrl = params.get("callbackUrl") ?? "/dashboard";
 
   const [email, setEmail] = useState("");

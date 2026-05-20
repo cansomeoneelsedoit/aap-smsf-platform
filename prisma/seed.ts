@@ -380,6 +380,22 @@ async function main() {
         uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 26),
       },
     });
+    await prisma.document.upsert({
+      where: { id: "doc_m001_acknowledgement" },
+      update: {},
+      create: {
+        id: "doc_m001_acknowledgement",
+        matterId: m001.id,
+        fileName: "Trust Deed Acknowledgement.pdf",
+        fileKey: "demo/ack-m001.pdf",
+        fileSize: 240_000,
+        category: DocumentCategory.SIGNED_AGREEMENT,
+        financialYear: "FY2026",
+        signStatus: DocumentSignStatus.AWAITING_SIGNATURE,
+        uploadedById: staffByRole.BOOKKEEPER?.staffId ?? null,
+        uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 8),
+      },
+    });
 
     await prisma.fileNote.upsert({
       where: { id: "fn_m001_call1" },
