@@ -4,6 +4,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ====================================================================
+   v4 design tokens — Admin Autopilot orange #e8591a brand
+   ==================================================================== */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -27,53 +31,76 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  /* AAP brand palette */
+  --color-aap-orange: #e8591a;
+  --color-aap-orange-2: #f06a2a;
+  --color-aap-orange-light: #fef3ee;
+  --color-aap-orange-border: #fcd9c7;
+  --color-aap-dark: #111827;
+  --color-aap-text2: #6b7280;
+  --color-aap-text3: #9ca3af;
+  --color-aap-surface: #f9fafb;
+  --color-aap-surface2: #f3f4f6;
+  --color-aap-green: #16a34a;
+  --color-aap-green-light: #dcfce7;
+  --color-aap-amber: #d97706;
+  --color-aap-amber-light: #fef3c7;
+  --color-aap-red: #dc2626;
+  --color-aap-red-light: #fee2e2;
+  --color-aap-blue: #2563eb;
+  --color-aap-blue-light: #dbeafe;
+  --color-aap-purple: #7c3aed;
+  --color-aap-purple-light: #f3e8ff;
+
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-script: var(--font-dancing-script), cursive;
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.13 0.028 261.692);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.13 0.028 261.692);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.13 0.028 261.692);
-  --primary: oklch(0.21 0.034 264.665);
-  --primary-foreground: oklch(0.985 0.002 247.839);
-  --secondary: oklch(0.967 0.003 264.542);
-  --secondary-foreground: oklch(0.21 0.034 264.665);
-  --muted: oklch(0.967 0.003 264.542);
-  --muted-foreground: oklch(0.551 0.027 264.364);
-  --accent: oklch(0.62 0.18 257);
-  --accent-foreground: oklch(0.985 0.002 247.839);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0.002 247.839);
-  --border: oklch(0.928 0.006 264.531);
-  --input: oklch(0.928 0.006 264.531);
-  --ring: oklch(0.62 0.18 257);
+  --radius: 0.75rem; /* 12px to match v4 */
+  --background: #f9fafb;          /* aap-surface */
+  --foreground: #111827;          /* aap-dark */
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --primary: #e8591a;             /* aap-orange */
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;           /* aap-surface2 */
+  --secondary-foreground: #111827;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #fef3ee;              /* aap-orange-light */
+  --accent-foreground: #e8591a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --input: #d1d5db;
+  --ring: #e8591a;
 }
 
 .dark {
-  --background: oklch(0.08 0 0);
-  --foreground: oklch(0.985 0.002 247.839);
-  --card: oklch(0.13 0.028 261.692);
-  --card-foreground: oklch(0.985 0.002 247.839);
-  --popover: oklch(0.13 0.028 261.692);
-  --popover-foreground: oklch(0.985 0.002 247.839);
-  --primary: oklch(0.985 0.002 247.839);
-  --primary-foreground: oklch(0.21 0.034 264.665);
-  --secondary: oklch(0.21 0.034 264.665);
-  --secondary-foreground: oklch(0.985 0.002 247.839);
-  --muted: oklch(0.21 0.034 264.665);
-  --muted-foreground: oklch(0.707 0.022 261.325);
-  --accent: oklch(0.62 0.18 257);
-  --accent-foreground: oklch(0.985 0.002 247.839);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.985 0.002 247.839);
-  --border: oklch(0.21 0.034 264.665);
-  --input: oklch(0.21 0.034 264.665);
-  --ring: oklch(0.62 0.18 257);
+  --background: #0b1220;
+  --foreground: #f4f4f5;
+  --card: #111827;
+  --card-foreground: #f4f4f5;
+  --popover: #111827;
+  --popover-foreground: #f4f4f5;
+  --primary: #f06a2a;
+  --primary-foreground: #ffffff;
+  --secondary: #1f2937;
+  --secondary-foreground: #f4f4f5;
+  --muted: #1f2937;
+  --muted-foreground: #9ca3af;
+  --accent: #2c1d12;
+  --accent-foreground: #f06a2a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #1f2937;
+  --input: #1f2937;
+  --ring: #f06a2a;
 }
 
 @layer base {
@@ -88,4 +115,68 @@
   body {
     height: 100%;
   }
+}
+
+/* ====================================================================
+   AAP v4 brand utilities
+   ==================================================================== */
+
+.aap-stage-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.aap-stage-pill.start    { background:#eff6ff; color:#1d4ed8; }
+.aap-stage-pill.prepare  { background:#fdf4ff; color:#7e22ce; }
+.aap-stage-pill.check    { background:#fff7ed; color:#c2410c; }
+.aap-stage-pill.lodge    { background:#fefce8; color:#854d0e; }
+.aap-stage-pill.active   { background:#f0fdf4; color:#15803d; }
+
+.aap-company-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.aap-company-badge.clime   { background:#dbeafe; color:#1d4ed8; }
+.aap-company-badge.liberty { background:#dcfce7; color:#15803d; }
+.aap-company-badge.riverx  { background:#fdf4ff; color:#7e22ce; }
+.aap-company-badge.aap     { background:#fef3ee; color:#e8591a; }
+.aap-company-badge.other   { background:#f3f4f6; color:#374151; }
+
+.aap-stat-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+.aap-stat-tag.orange { background:#fef3ee; color:#e8591a; }
+.aap-stat-tag.green  { background:#dcfce7; color:#16a34a; }
+.aap-stat-tag.amber  { background:#fef3c7; color:#d97706; }
+.aap-stat-tag.red    { background:#fee2e2; color:#dc2626; }
+.aap-stat-tag.blue   { background:#dbeafe; color:#2563eb; }
+.aap-stat-tag.purple { background:#f3e8ff; color:#7c3aed; }
+.aap-stat-tag.gray   { background:#f3f4f6; color:#6b7280; }
+
+.aap-handoff-panel {
+  background: linear-gradient(135deg, #fff7ed, #fef3ee);
+  border: 1.5px solid #fcd9c7;
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.aap-script {
+  font-family: var(--font-script);
 }
