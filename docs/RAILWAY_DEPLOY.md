@@ -13,6 +13,7 @@
 - **Build command:** `npm run build`
 - **Start command:** `npm run start`
 - The app listens on `PORT` (set automatically by Railway)
+- **Node.js 20.19+** required (Prisma 7); set via `engines.node` in `package.json` and `.nvmrc`
 
 ## Database setup
 
