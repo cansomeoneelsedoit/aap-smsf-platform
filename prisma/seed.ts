@@ -1,0 +1,452 @@
+import { StaffRole, Stage, AccountType } from "@/generated/prisma/client";
+import { hashPassword } from "better-auth/crypto";
+import { prisma } from "@/lib/db";
+import {
+  DEMO_ACCOUNTS,
+  INITIAL_AUDIT_LOG,
+  INITIAL_CLIENTS,
+  INITIAL_COMPANIES,
+  INITIAL_FILE_NOTES,
+  INITIAL_TASKS,
+  STAGE_OWNER_MAP,
+  STAGES,
+} from "../lib/mock-data";
+
+const DEMO_PASSWORD = "demo123";
+
+const ROLE_MAP: Record<string, StaffRole> = {
+  "Master Owner": StaffRole.MASTER_OWNER,
+  Bookkeeper: StaffRole.BOOKKEEPER,
+  "Compliance Officer": StaffRole.COMPLIANCE_OFFICER,
+  "Tax Agent (Registered)": StaffRole.TAX_AGENT,
+};
+
+const STAFF_EXTRA = [
+  {
+    email: "rachel@aap.com.au",
+    name: "Rachel Park",
+    role: "Tax Agent (Registered)" as const,
+    initials: "RP",
+    color: "#dc2626",
+    hobbies: "art, photography",
+  },
+];
+
+const COMPANY_NAME_TO_ID: Record<string, string> = {
+  "Clime ASX": "clime",
+  Liberty: "liberty",
+  RiverX: "riverx",
+  AAP: "aap",
+};
+
+const OWNER_NAME_TO_EMAIL: Record<string, string> = {
+  "Sarah Chen": "sarah@aap.com.au",
+  "Emma Wilson": "emma@aap.com.au",
+  "Michael Torres": "michael@aap.com.au",
+  "Rachel Park": "rachel@aap.com.au",
+};
+
+function parseDueDate(due: string): Date | null {
+  if (due === "—" || due === "TBD") return null;
+  const match = due.match(/^(\d{1,2}) Mar$/);
+  if (!match) return null;
+  return new Date(`2026-03-${match[1].padStart(2, "0")}T00:00:00.000Z`);
+}
+
+function parseAuditTimestamp(ts: string): Date {
+  const [datePart, timePart] = ts.split(" ");
+  return new Date(`${datePart}T${timePart}:00.000Z`);
+}
+
+function parseFileNoteTime(time: string): Date {
+  const match = time.match(/^(\d{1,2}) Mar 2026 · (\d{2}):(\d{2})$/);
+  if (!match) return new Date();
+  return new Date(`2026-03-${match[1].padStart(2, "0")}T${match[2]}:${match[3]}:00.000Z`);
+}
+
+function generateId(): string {
+  return crypto.randomUUID();
+}
+
+async function upsertStaffUser(
+  email: string,
+  name: string,
+  roleLabel: string,
+  initials: string,
+  color: string,
+  hobbies?: string
+) {
+  const passwordHash = await hashPassword(DEMO_PASSWORD);
+  const userId = generateId();
+
+  const user = await prisma.user.upsert({
+    where: { email },
+    create: {
+      id: userId,
+      name,
+      email,
+      emailVerified: true,
+      accountType: AccountType.STAFF,
+      accounts: {
+        create: {
+          id: generateId(),
+          accountId: email,
+          providerId: "credential",
+          password: passwordHash,
+        },
+      },
+      staffProfile: {
+        create: {
+          role: ROLE_MAP[roleLabel],
+          initials,
+          color,
+          hobbies,
+        },
+      },
+    },
+    update: {
+      name,
+      emailVerified: true,
+      accountType: AccountType.STAFF,
+      staffProfile: {
+        upsert: {
+          create: {
+            role: ROLE_MAP[roleLabel],
+            initials,
+            color,
+            hobbies,
+          },
+          update: {
+            role: ROLE_MAP[roleLabel],
+            initials,
+            color,
+            hobbies,
+          },
+        },
+      },
+    },
+  });
+
+  const existingAccount = await prisma.account.findFirst({
+    where: { userId: user.id, providerId: "credential" },
+  });
+
+  if (!existingAccount) {
+    await prisma.account.create({
+      data: {
+        id: generateId(),
+        accountId: email,
+        providerId: "credential",
+        userId: user.id,
+        password: passwordHash,
+      },
+    });
+  } else {
+    await prisma.account.update({
+      where: { id: existingAccount.id },
+      data: { password: passwordHash },
+    });
+  }
+
+  return user;
+}
+
+async function upsertClientUser(email: string, name: string) {
+  const passwordHash = await hashPassword(DEMO_PASSWORD);
+
+  const user = await prisma.user.upsert({
+    where: { email },
+    create: {
+      id: generateId(),
+      name,
+      email,
+      emailVerified: true,
+      accountType: AccountType.CLIENT,
+      accounts: {
+        create: {
+          id: generateId(),
+          accountId: email,
+          providerId: "credential",
+          password: passwordHash,
+        },
+      },
+    },
+    update: {
+      name,
+      emailVerified: true,
+      accountType: AccountType.CLIENT,
+    },
+  });
+
+  const existingAccount = await prisma.account.findFirst({
+    where: { userId: user.id, providerId: "credential" },
+  });
+
+  if (!existingAccount) {
+    await prisma.account.create({
+      data: {
+        id: generateId(),
+        accountId: email,
+        providerId: "credential",
+        userId: user.id,
+        password: passwordHash,
+      },
+    });
+  } else {
+    await prisma.account.update({
+      where: { id: existingAccount.id },
+      data: { password: passwordHash },
+    });
+  }
+
+  return user;
+}
+
+async function main() {
+  console.log("Seeding database...");
+
+  for (const company of INITIAL_COMPANIES) {
+    const [contactName, contactEmail] = company.contact.split(" · ");
+    await prisma.company.upsert({
+      where: { id: company.id },
+      create: {
+        id: company.id,
+        name: company.name,
+        description: company.description,
+        contactName,
+        contactEmail,
+        letter: company.letter,
+        bgColor: company.bgColor,
+        textColor: company.textColor,
+        cbClass: `cb-${company.id}`,
+      },
+      update: {
+        name: company.name,
+        description: company.description,
+        contactName,
+        contactEmail,
+        letter: company.letter,
+        bgColor: company.bgColor,
+        textColor: company.textColor,
+        cbClass: `cb-${company.id}`,
+      },
+    });
+  }
+
+  await prisma.company.upsert({
+    where: { id: "aap" },
+    create: {
+      id: "aap",
+      name: "AAP",
+      description: "Internal · Corporate trustee",
+      contactName: "Admin Autopilot",
+      contactEmail: "admin@aap.com.au",
+      letter: "A",
+      bgColor: "#fff7ed",
+      textColor: "#c2410c",
+      cbClass: "cb-aap",
+    },
+    update: {},
+  });
+
+  const staffUsers: Record<string, { id: string }> = {};
+
+  for (const account of DEMO_ACCOUNTS) {
+    const user = await upsertStaffUser(
+      account.email,
+      account.name,
+      account.role,
+      account.initials,
+      account.color
+    );
+    staffUsers[account.email] = user;
+  }
+
+  for (const extra of STAFF_EXTRA) {
+    const user = await upsertStaffUser(
+      extra.email,
+      extra.name,
+      extra.role,
+      extra.initials,
+      extra.color,
+      extra.hobbies
+    );
+    staffUsers[extra.email] = user;
+  }
+
+  for (const stage of STAGES) {
+    const ownerName = STAGE_OWNER_MAP[stage];
+    const email = OWNER_NAME_TO_EMAIL[ownerName];
+    const staff = staffUsers[email];
+    if (!staff) continue;
+
+    await prisma.stageAssignment.upsert({
+      where: { stage: stage as Stage },
+      create: { stage: stage as Stage, staffId: staff.id },
+      update: { staffId: staff.id },
+    });
+  }
+
+  const matterRecords: Record<string, { id: string }> = {};
+
+  for (const client of INITIAL_CLIENTS) {
+    const companyId = COMPANY_NAME_TO_ID[client.company] ?? "aap";
+    const stageOwnerName = STAGE_OWNER_MAP[client.stage];
+    const ownerEmail = OWNER_NAME_TO_EMAIL[stageOwnerName];
+    const owner = staffUsers[ownerEmail];
+
+    const matter = await prisma.matter.upsert({
+      where: { displayId: client.id },
+      create: {
+        displayId: client.id,
+        name: client.name,
+        subtitle: client.sub,
+        matterType: client.type,
+        stage: client.stage as Stage,
+        dueDate: parseDueDate(client.due),
+        companyId,
+        ownerId: owner?.id,
+      },
+      update: {
+        name: client.name,
+        subtitle: client.sub,
+        matterType: client.type,
+        stage: client.stage as Stage,
+        dueDate: parseDueDate(client.due),
+        companyId,
+        ownerId: owner?.id,
+      },
+    });
+
+    matterRecords[client.id] = matter;
+  }
+
+  const m001 = matterRecords["M001"];
+  if (m001) {
+    for (const task of INITIAL_TASKS) {
+      const assigneeName = task.meta.includes("Michael Torres")
+        ? "Michael Torres"
+        : "Emma Wilson";
+      const assigneeEmail = OWNER_NAME_TO_EMAIL[assigneeName];
+      const assignee = staffUsers[assigneeEmail];
+
+      await prisma.task.upsert({
+        where: { id: task.id },
+        create: {
+          id: task.id,
+          matterId: m001.id,
+          title: task.title,
+          done: task.done,
+          assigneeId: assignee?.id,
+          completedAt: task.done ? new Date("2026-03-19T00:00:00.000Z") : null,
+          dueDate: task.meta.includes("22 Mar")
+            ? new Date("2026-03-22T00:00:00.000Z")
+            : task.meta.includes("25 Mar")
+              ? new Date("2026-03-25T00:00:00.000Z")
+              : null,
+        },
+        update: {
+          title: task.title,
+          done: task.done,
+          assigneeId: assignee?.id,
+        },
+      });
+    }
+
+    for (const note of INITIAL_FILE_NOTES) {
+      const authorEmail =
+        note.author === "Emma Wilson"
+          ? "emma@aap.com.au"
+          : "michael@aap.com.au";
+      const author = staffUsers[authorEmail];
+
+      if (!author) continue;
+
+      await prisma.fileNote.upsert({
+        where: { id: note.id },
+        create: {
+          id: note.id,
+          matterId: m001.id,
+          authorId: author.id,
+          type: note.type,
+          subject: note.subject,
+          body: note.body,
+          tags: note.tags,
+          pinned: note.pinned ?? false,
+          draft: note.draft ?? false,
+          createdAt: parseFileNoteTime(note.time),
+        },
+        update: {
+          subject: note.subject,
+          body: note.body,
+          tags: note.tags,
+          pinned: note.pinned ?? false,
+          draft: note.draft ?? false,
+        },
+      });
+    }
+  }
+
+  for (const entry of INITIAL_AUDIT_LOG) {
+    const userEmail = entry.user.includes("emma")
+      ? "emma@aap.com.au"
+      : entry.user.includes("michael")
+        ? "michael@aap.com.au"
+        : null;
+    const user = userEmail ? staffUsers[userEmail] : null;
+    const matter = matterRecords[entry.entity];
+
+    await prisma.auditEntry.upsert({
+      where: { id: entry.id },
+      create: {
+        id: entry.id,
+        action: entry.action,
+        detail: entry.detail,
+        entity: entry.entity,
+        createdAt: parseAuditTimestamp(entry.timestamp),
+        userId: user?.id,
+        matterId: matter?.id,
+      },
+      update: {
+        action: entry.action,
+        detail: entry.detail,
+        entity: entry.entity,
+        userId: user?.id,
+        matterId: matter?.id,
+      },
+    });
+  }
+
+  const john = await upsertClientUser("john@smithfamily.com.au", "John Smith");
+  const mary = await upsertClientUser("mary@smithfamily.com.au", "Mary Smith");
+
+  if (m001) {
+    for (const [user, isPrimary] of [
+      [john, true],
+      [mary, false],
+    ] as const) {
+      await prisma.matterMember.upsert({
+        where: {
+          matterId_userId: { matterId: m001.id, userId: user.id },
+        },
+        create: {
+          matterId: m001.id,
+          userId: user.id,
+          isPrimary,
+        },
+        update: { isPrimary },
+      });
+    }
+  }
+
+  console.log("Seed complete.");
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

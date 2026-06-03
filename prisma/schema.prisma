@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccountType {
+  STAFF
+  CLIENT
+}
+
+enum StaffRole {
+  MASTER_OWNER
+  BOOKKEEPER
+  COMPLIANCE_OFFICER
+  TAX_AGENT
+}
+
+enum Stage {
+  Start
+  Prepare
+  Check
+  Lodge
+  Active
+}
+
+model User {
+  id            String      @id
+  name          String
+  email         String
+  emailVerified Boolean     @default(false)
+  image         String?
+  accountType   AccountType
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  sessions         Session[]
+  accounts         Account[]
+  staffProfile     StaffProfile?
+  matterMembers    MatterMember[]
+  ownedMatters     Matter[]          @relation("MatterOwner")
+  auditEntries     AuditEntry[]
+  fileNotes        FileNote[]
+  assignedTasks    Task[]            @relation("TaskAssignee")
+  stageAssignments StageAssignment[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model StaffProfile {
+  userId   String    @id
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     StaffRole
+  initials String
+  color    String
+  hobbies  String?
+}
+
+model Company {
+  id           String  @id
+  name         String
+  description  String
+  contactName  String
+  contactEmail String
+  letter       String  @db.Char(1)
+  bgColor      String
+  textColor    String
+  cbClass      String
+  matters      Matter[]
+}
+
+model Matter {
+  id         String    @id @default(cuid())
+  displayId  String    @unique
+  name       String
+  subtitle   String?
+  matterType String
+  stage      Stage
+  dueDate    DateTime?
+  companyId  String
+  company    Company   @relation(fields: [companyId], references: [id])
+  ownerId    String?
+  owner      User?     @relation("MatterOwner", fields: [ownerId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  members      MatterMember[]
+  tasks        Task[]
+  fileNotes    FileNote[]
+  auditEntries AuditEntry[]
+}
+
+model MatterMember {
+  id        String  @id @default(cuid())
+  matterId  String
+  matter    Matter  @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isPrimary Boolean @default(false)
+
+  @@unique([matterId, userId])
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  matterId    String
+  matter      Matter    @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  title       String
+  done        Boolean   @default(false)
+  dueDate     DateTime?
+  assigneeId  String?
+  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model FileNote {
+  id        String   @id @default(cuid())
+  matterId  String
+  matter    Matter   @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  type      String
+  subject   String
+  body      String   @db.Text
+  tags      String[]
+  pinned    Boolean  @default(false)
+  draft     Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditEntry {
+  id        String   @id @default(cuid())
+  matterId  String?
+  matter    Matter?  @relation(fields: [matterId], references: [id], onDelete: SetNull)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  detail    String
+  entity    String
+  createdAt DateTime @default(now())
+}
+
+model StageAssignment {
+  stage   Stage  @id
+  staffId String
+  staff   User   @relation(fields: [staffId], references: [id])
+}
