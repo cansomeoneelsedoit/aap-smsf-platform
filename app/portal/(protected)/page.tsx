@@ -29,7 +29,7 @@ export default async function PortalOverviewPage() {
 
   return (
     <>
-      <div className="mb-4 rounded-brand bg-gradient-to-br from-brand-orange to-[#c44a0c] p-6 text-white">
+      <div className="mb-4 rounded-brand bg-gradient-to-br from-brand-primary to-brand-orange-2 p-6 text-white">
         <div className="text-xs opacity-80">Matter {matter?.displayId ?? "—"}</div>
         <h2 className="text-[22px] font-extrabold">{matter?.name ?? "Your SMSF"}</h2>
         <p className="text-[13px] opacity-85">

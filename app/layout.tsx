@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, Dancing_Script } from "next/font/google";
+import { Instrument_Sans, Dancing_Script } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { DemoBanner } from "@/components/layout/demo-banner";
 import "./globals.css";
 
-const inter = Inter({
+const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-instrument-sans",
 });
 
 const dancingScript = Dancing_Script({
@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${dancingScript.variable} antialiased`}>
+      <body className={`${instrumentSans.variable} ${dancingScript.variable} antialiased`}>
         <DemoBanner />
         <Providers>{children}</Providers>
       </body>
