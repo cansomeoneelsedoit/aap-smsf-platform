@@ -1,24 +1,45 @@
 import { prisma } from "@/lib/db";
-import { mapMatterToClient } from "@/lib/mappers";
+import { mapMatterToSummary } from "@/lib/mappers";
 import type { Stage } from "@/generated/prisma/client";
+
+const matterSummaryInclude = {
+  client: { include: { adviserGroup: true } },
+  owner: { include: { staffProfile: true } },
+} as const;
+
+/** Client (trust) party with trustees and, for corporate trustees, their directors. */
+const clientContactsInclude = {
+  adviserGroup: true,
+  trust: true,
+  relationsOut: {
+    include: {
+      childParty: {
+        include: {
+          person: true,
+          company: true,
+          relationsOut: {
+            include: { childParty: { include: { person: true } } },
+          },
+        },
+      },
+    },
+  },
+} as const;
 
 export async function getMatters() {
   const matters = await prisma.matter.findMany({
-    include: {
-      company: true,
-      owner: { include: { staffProfile: true } },
-    },
+    include: matterSummaryInclude,
     orderBy: { displayId: "asc" },
   });
 
-  return matters.map(mapMatterToClient);
+  return matters.map(mapMatterToSummary);
 }
 
 export async function getMatterByDisplayId(displayId: string) {
   return prisma.matter.findUnique({
     where: { displayId },
     include: {
-      company: true,
+      client: { include: clientContactsInclude },
       owner: { include: { staffProfile: true } },
     },
   });
@@ -27,23 +48,18 @@ export async function getMatterByDisplayId(displayId: string) {
 export async function getMattersByStage(stage: Stage) {
   const matters = await prisma.matter.findMany({
     where: { stage },
-    include: {
-      company: true,
-      owner: { include: { staffProfile: true } },
-    },
+    include: matterSummaryInclude,
     orderBy: { displayId: "asc" },
   });
 
-  return matters.map(mapMatterToClient);
+  return matters.map(mapMatterToSummary);
 }
 
-export async function getCompanies() {
-  const companies = await prisma.company.findMany({
-    include: { matters: { select: { stage: true } } },
+export async function getAdviserGroups() {
+  return prisma.adviserGroup.findMany({
+    include: { clients: { include: { matters: { select: { stage: true } } } } },
     orderBy: { name: "asc" },
   });
-
-  return companies;
 }
 
 export async function getAuditLog() {
@@ -82,20 +98,33 @@ export async function getMatterFileNotes(matterId: string) {
   });
 }
 
+/**
+ * Finds the matter a portal user can access by walking the party graph:
+ * the user's person party is a trustee / authorised party of the client
+ * trust, or a director of its corporate trustee.
+ */
 export async function getClientPortalMatter(userId: string) {
-  const membership = await prisma.matterMember.findFirst({
-    where: { userId },
-    include: {
-      matter: {
-        include: {
-          company: true,
-          owner: { include: { staffProfile: true } },
-          members: { include: { user: true } },
+  return prisma.matter.findFirst({
+    where: {
+      client: {
+        relationsOut: {
+          some: {
+            OR: [
+              { childParty: { person: { userId } } },
+              {
+                childParty: {
+                  relationsOut: { some: { childParty: { person: { userId } } } },
+                },
+              },
+            ],
+          },
         },
       },
     },
-    orderBy: { isPrimary: "desc" },
+    include: {
+      client: { include: clientContactsInclude },
+      owner: { include: { staffProfile: true } },
+    },
+    orderBy: { createdAt: "asc" },
   });
-
-  return membership?.matter ?? null;
 }

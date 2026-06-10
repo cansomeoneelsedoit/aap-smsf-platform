@@ -7,7 +7,7 @@ import { StagePill } from "@/components/brand/stage-pill";
 import { signOut } from "@/lib/auth-client";
 import type { Session } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import type { Matter, Company, User, StaffProfile } from "@/generated/prisma/client";
+import type { Matter, Party, User, StaffProfile } from "@/generated/prisma/client";
 
 const portalNav = [
   { href: "/portal", label: "📊 My matter", exact: true },
@@ -18,9 +18,8 @@ const portalNav = [
 ];
 
 type PortalMatter = Matter & {
-  company: Company;
+  client: Party;
   owner: (User & { staffProfile: StaffProfile | null }) | null;
-  members: { user: User }[];
 };
 
 const STAGE_PILL_MAP: Record<string, string> = {
@@ -61,7 +60,7 @@ export function PortalShell({
         <div className="border-b border-brand-border px-4 py-4">
           <div className="text-[13px] font-bold">{user.name}</div>
           <div className="text-[11px] text-brand-text-3">
-            {matter?.name ?? "No matter linked"}
+            {matter?.client.name ?? "No matter linked"}
           </div>
         </div>
         <div className="px-4 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-wider text-brand-text-3">
@@ -109,7 +108,7 @@ export function PortalShell({
       <div className="flex flex-1 flex-col overflow-hidden bg-brand-surface">
         <header className="flex h-14 shrink-0 items-center border-b border-brand-border bg-white px-6">
           <h1 className="text-base font-bold text-brand-dark">
-            {matter?.name ?? "Client Portal"}
+            {matter?.client.name ?? "Client Portal"}
           </h1>
           <div className="ml-auto">
             {matter && (

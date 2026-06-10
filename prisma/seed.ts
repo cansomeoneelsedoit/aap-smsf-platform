@@ -1,13 +1,13 @@
-import { StaffRole, Stage, AccountType } from "@/generated/prisma/client";
+import { StaffRole, Stage, AccountType, PartyRole } from "@/generated/prisma/client";
 import { hashPassword } from "better-auth/crypto";
 import { prisma } from "@/lib/db";
 import {
   DEMO_ACCOUNTS,
+  INITIAL_ADVISER_GROUPS,
   INITIAL_AUDIT_LOG,
-  INITIAL_CLIENTS,
-  INITIAL_COMPANIES,
   INITIAL_FILE_NOTES,
   INITIAL_TASKS,
+  SEED_MATTERS,
   STAGE_OWNER_MAP,
   STAGES,
 } from "../lib/mock-data";
@@ -31,13 +31,6 @@ const STAFF_EXTRA = [
     hobbies: "art, photography",
   },
 ];
-
-const COMPANY_NAME_TO_ID: Record<string, string> = {
-  "Clime ASX": "clime",
-  Liberty: "liberty",
-  RiverX: "riverx",
-  AAP: "aap",
-};
 
 const OWNER_NAME_TO_EMAIL: Record<string, string> = {
   "Sarah Chen": "sarah@aap.com.au",
@@ -151,7 +144,7 @@ async function upsertStaffUser(
   return user;
 }
 
-async function upsertClientUser(email: string, name: string) {
+async function upsertClientUser(email: string, name: string, phone?: string) {
   const passwordHash = await hashPassword(DEMO_PASSWORD);
 
   const user = await prisma.user.upsert({
@@ -161,6 +154,7 @@ async function upsertClientUser(email: string, name: string) {
       name,
       email,
       emailVerified: true,
+      phone,
       accountType: AccountType.CLIENT,
       accounts: {
         create: {
@@ -174,6 +168,7 @@ async function upsertClientUser(email: string, name: string) {
     update: {
       name,
       emailVerified: true,
+      phone,
       accountType: AccountType.CLIENT,
     },
   });
@@ -202,43 +197,95 @@ async function upsertClientUser(email: string, name: string) {
   return user;
 }
 
+interface SeedPerson {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  userId?: string;
+}
+
+async function upsertPersonParty(person: SeedPerson) {
+  const name = `${person.firstName} ${person.lastName}`;
+  return prisma.party.upsert({
+    where: { id: person.id },
+    create: {
+      id: person.id,
+      type: "PERSON",
+      name,
+      person: {
+        create: {
+          firstName: person.firstName,
+          lastName: person.lastName,
+          email: person.email,
+          phone: person.phone,
+          userId: person.userId,
+        },
+      },
+    },
+    update: {
+      name,
+      person: {
+        update: {
+          firstName: person.firstName,
+          lastName: person.lastName,
+          email: person.email,
+          phone: person.phone,
+          userId: person.userId,
+        },
+      },
+    },
+  });
+}
+
+async function upsertRelationship(parentPartyId: string, childPartyId: string, role: PartyRole) {
+  await prisma.partyRelationship.upsert({
+    where: {
+      parentPartyId_childPartyId_role: { parentPartyId, childPartyId, role },
+    },
+    create: { parentPartyId, childPartyId, role },
+    update: {},
+  });
+}
+
 async function main() {
   console.log("Seeding database...");
 
-  for (const company of INITIAL_COMPANIES) {
-    const [contactName, contactEmail] = company.contact.split(" · ");
-    await prisma.company.upsert({
-      where: { id: company.id },
+  for (const group of INITIAL_ADVISER_GROUPS) {
+    const [contactName, contactEmail] = group.contact.split(" · ");
+    await prisma.adviserGroup.upsert({
+      where: { id: group.id },
       create: {
-        id: company.id,
-        name: company.name,
-        description: company.description,
+        id: group.id,
+        name: group.name,
+        description: group.description,
         contactName,
         contactEmail,
-        letter: company.letter,
-        bgColor: company.bgColor,
-        textColor: company.textColor,
-        cbClass: `cb-${company.id}`,
+        letter: group.letter,
+        bgColor: group.bgColor,
+        textColor: group.textColor,
+        cbClass: `cb-${group.id}`,
       },
       update: {
-        name: company.name,
-        description: company.description,
+        name: group.name,
+        description: group.description,
         contactName,
         contactEmail,
-        letter: company.letter,
-        bgColor: company.bgColor,
-        textColor: company.textColor,
-        cbClass: `cb-${company.id}`,
+        letter: group.letter,
+        bgColor: group.bgColor,
+        textColor: group.textColor,
+        cbClass: `cb-${group.id}`,
       },
     });
   }
 
-  await prisma.company.upsert({
+  await prisma.adviserGroup.upsert({
     where: { id: "aap" },
     create: {
       id: "aap",
       name: "AAP",
-      description: "Internal · Corporate trustee",
+      description: "Internal · Direct clients",
       contactName: "Admin Autopilot",
       contactEmail: "admin@aap.com.au",
       letter: "A",
@@ -287,38 +334,119 @@ async function main() {
     });
   }
 
+  // Client (trust) parties and their matters
   const matterRecords: Record<string, { id: string }> = {};
+  const trustParties: Record<string, { id: string }> = {};
 
-  for (const client of INITIAL_CLIENTS) {
-    const companyId = COMPANY_NAME_TO_ID[client.company] ?? "aap";
-    const stageOwnerName = STAGE_OWNER_MAP[client.stage];
+  for (const seed of SEED_MATTERS) {
+    const trustPartyId = `party-trust-${seed.id.toLowerCase()}`;
+
+    const trust = await prisma.party.upsert({
+      where: { id: trustPartyId },
+      create: {
+        id: trustPartyId,
+        type: "TRUST",
+        name: seed.clientName,
+        adviserGroupId: seed.adviserGroupId,
+        trust: { create: { abn: seed.abn } },
+      },
+      update: {
+        name: seed.clientName,
+        adviserGroupId: seed.adviserGroupId,
+        trust: {
+          upsert: { create: { abn: seed.abn }, update: { abn: seed.abn } },
+        },
+      },
+    });
+    trustParties[seed.id] = trust;
+
+    const stageOwnerName = STAGE_OWNER_MAP[seed.stage];
     const ownerEmail = OWNER_NAME_TO_EMAIL[stageOwnerName];
     const owner = staffUsers[ownerEmail];
 
     const matter = await prisma.matter.upsert({
-      where: { displayId: client.id },
+      where: { displayId: seed.id },
       create: {
-        displayId: client.id,
-        name: client.name,
-        subtitle: client.sub,
-        matterType: client.type,
-        stage: client.stage as Stage,
-        dueDate: parseDueDate(client.due),
-        companyId,
+        displayId: seed.id,
+        name: seed.matterName,
+        matterType: seed.type,
+        stage: seed.stage as Stage,
+        dueDate: parseDueDate(seed.due),
+        clientId: trust.id,
         ownerId: owner?.id,
       },
       update: {
-        name: client.name,
-        subtitle: client.sub,
-        matterType: client.type,
-        stage: client.stage as Stage,
-        dueDate: parseDueDate(client.due),
-        companyId,
+        name: seed.matterName,
+        matterType: seed.type,
+        stage: seed.stage as Stage,
+        dueDate: parseDueDate(seed.due),
+        clientId: trust.id,
         ownerId: owner?.id,
       },
     });
 
-    matterRecords[client.id] = matter;
+    matterRecords[seed.id] = matter;
+  }
+
+  // Smith Family Superannuation Fund (M001): individual trustees with portal logins
+  const john = await upsertClientUser("john@smithfamily.com.au", "John Smith", "0412 345 678");
+  const mary = await upsertClientUser("mary@smithfamily.com.au", "Mary Smith", "0413 987 654");
+
+  const johnParty = await upsertPersonParty({
+    id: "party-person-john-smith",
+    firstName: "John",
+    lastName: "Smith",
+    email: "john@smithfamily.com.au",
+    phone: "0412 345 678",
+    userId: john.id,
+  });
+  const maryParty = await upsertPersonParty({
+    id: "party-person-mary-smith",
+    firstName: "Mary",
+    lastName: "Smith",
+    email: "mary@smithfamily.com.au",
+    phone: "0413 987 654",
+    userId: mary.id,
+  });
+
+  const smithTrust = trustParties["M001"];
+  if (smithTrust) {
+    await upsertRelationship(smithTrust.id, johnParty.id, PartyRole.TRUSTEE);
+    await upsertRelationship(smithTrust.id, maryParty.id, PartyRole.TRUSTEE);
+  }
+
+  // Brown Family Super (M004): corporate trustee with a director
+  const brownCompany = await prisma.party.upsert({
+    where: { id: "party-company-brown-family" },
+    create: {
+      id: "party-company-brown-family",
+      type: "COMPANY",
+      name: "Brown Family Pty Ltd",
+      company: { create: { acn: "634 789 123" } },
+    },
+    update: {
+      name: "Brown Family Pty Ltd",
+      company: {
+        upsert: {
+          create: { acn: "634 789 123" },
+          update: { acn: "634 789 123" },
+        },
+      },
+    },
+  });
+
+  const davidParty = await upsertPersonParty({
+    id: "party-person-david-brown",
+    firstName: "David",
+    lastName: "Brown",
+    email: "david@brownfamily.com.au",
+    phone: "0421 555 010",
+  });
+
+  const brownTrust = trustParties["M004"];
+  if (brownTrust) {
+    await upsertRelationship(brownTrust.id, brownCompany.id, PartyRole.TRUSTEE);
+    await upsertRelationship(brownCompany.id, davidParty.id, PartyRole.DIRECTOR);
   }
 
   const m001 = matterRecords["M001"];
@@ -415,28 +543,6 @@ async function main() {
         matterId: matter?.id,
       },
     });
-  }
-
-  const john = await upsertClientUser("john@smithfamily.com.au", "John Smith");
-  const mary = await upsertClientUser("mary@smithfamily.com.au", "Mary Smith");
-
-  if (m001) {
-    for (const [user, isPrimary] of [
-      [john, true],
-      [mary, false],
-    ] as const) {
-      await prisma.matterMember.upsert({
-        where: {
-          matterId_userId: { matterId: m001.id, userId: user.id },
-        },
-        create: {
-          matterId: m001.id,
-          userId: user.id,
-          isPrimary,
-        },
-        update: { isPrimary },
-      });
-    }
   }
 
   console.log("Seed complete.");

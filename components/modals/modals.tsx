@@ -21,7 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PartySearchInput } from "@/components/parties/party-search-input";
 import { useMockStore, useMatterActions } from "@/hooks/use-mock-store";
+import type { PartySearchResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function ModalWrapper({
@@ -183,7 +185,7 @@ export function Modals() {
     acceptHandoff,
     saveProfile,
     saveFileNote,
-    addCompany,
+    addAdviserGroup,
     approveCallNote,
     uploadDoc,
     sendClientMessage,
@@ -197,9 +199,9 @@ export function Modals() {
   const [fnBody, setFnBody] = useState("");
   const [fnType, setFnType] = useState("Internal note");
   const [fnTags, setFnTags] = useState("");
-  const [companyName, setCompanyName] = useState("");
+  const [groupName, setGroupName] = useState("");
   const [matterName, setMatterName] = useState("");
-  const [matterCompany, setMatterCompany] = useState("AAP");
+  const [matterClient, setMatterClient] = useState<PartySearchResult | null>(null);
   const [matterType, setMatterType] = useState("New SMSF Setup");
   const [msgSubject, setMsgSubject] = useState("");
   const [msgBody, setMsgBody] = useState("");
@@ -278,16 +280,16 @@ export function Modals() {
 
       <ModalWrapper
         id="new-company"
-        title="Add company / referrer"
+        title="Add adviser group"
         footer={
           <>
             <Button variant="outline" onClick={closeModal}>Cancel</Button>
-            <Button onClick={() => { if (companyName) addCompany(companyName); setCompanyName(""); }}>Add company</Button>
+            <Button onClick={() => { if (groupName) addAdviserGroup(groupName); setGroupName(""); }}>Add adviser group</Button>
           </>
         }
       >
         <div className="space-y-3">
-          <div><Label>Company name</Label><Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="e.g. Clime ASX" /></div>
+          <div><Label>Adviser group name</Label><Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Clime ASX" /></div>
         </div>
       </ModalWrapper>
 
@@ -387,26 +389,48 @@ export function Modals() {
 
       <ModalWrapper
         id="new-matter"
-        title="New client / matter"
+        title="New matter"
         size="sm"
         footer={
           <>
             <Button variant="outline" onClick={closeModal}>Cancel</Button>
-            <Button onClick={() => { if (matterName) createMatter(matterName, matterCompany, matterType); }}>Create & assign</Button>
+            <Button
+              onClick={() => {
+                if (matterName && matterClient) {
+                  createMatter(matterName, matterClient.partyId, matterType);
+                  setMatterName("");
+                  setMatterClient(null);
+                }
+              }}
+            >
+              Create & assign
+            </Button>
           </>
         }
       >
         <div className="space-y-3">
-          <div><Label>Fund / client name</Label><Input value={matterName} onChange={(e) => setMatterName(e.target.value)} /></div>
-          <div><Label>Company group</Label>
-            <Select value={matterCompany} onValueChange={setMatterCompany}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {["Clime ASX", "Liberty", "RiverX", "AAP"].map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div><Label>Matter name</Label><Input value={matterName} onChange={(e) => setMatterName(e.target.value)} placeholder="e.g. New SMSF Setup" /></div>
+          <div>
+            <Label>Client</Label>
+            {matterClient ? (
+              <div className="flex items-center justify-between rounded-brand-sm border border-brand-border bg-brand-surface px-3 py-2">
+                <div>
+                  <div className="text-[13px] font-medium">{matterClient.name}</div>
+                  {matterClient.detail && (
+                    <div className="text-[11px] text-brand-text-3">{matterClient.detail}</div>
+                  )}
+                </div>
+                <Button variant="outline" size="xs" onClick={() => setMatterClient(null)}>
+                  Change
+                </Button>
+              </div>
+            ) : (
+              <PartySearchInput
+                type="TRUST"
+                placeholder="Search existing clients…"
+                onSelect={setMatterClient}
+              />
+            )}
           </div>
           <div><Label>Matter type</Label>
             <Select value={matterType} onValueChange={setMatterType}>
@@ -414,6 +438,7 @@ export function Modals() {
               <SelectContent>
                 <SelectItem value="New SMSF Setup">New SMSF Setup</SelectItem>
                 <SelectItem value="Existing SMSF Onboarding">Existing SMSF Onboarding</SelectItem>
+                <SelectItem value="Annual Compliance">Annual Compliance</SelectItem>
               </SelectContent>
             </Select>
           </div>

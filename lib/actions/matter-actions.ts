@@ -65,19 +65,17 @@ export async function advanceStageAction(matterDisplayId: string) {
   );
 
   revalidatePath("/clients");
-  revalidatePath(`/clients/${matterDisplayId}`);
+  revalidatePath(`/matter/${matterDisplayId}`);
   return { success: true, stage: nextStage };
 }
 
-export async function createMatterAction(name: string, companyName: string, type: string) {
+export async function createMatterAction(name: string, clientPartyId: string, type: string) {
   const session = await requireStaffSession();
   const count = await prisma.matter.count();
   const displayId = `M${String(count + 1).padStart(3, "0")}`;
 
-  const company = await prisma.company.findFirst({
-    where: { name: companyName },
-  });
-  if (!company) throw new Error("Company not found");
+  const client = await prisma.party.findUnique({ where: { id: clientPartyId } });
+  if (!client || client.type !== "TRUST") throw new Error("Client not found");
 
   const startOwner = await prisma.user.findFirst({
     where: { name: STAGE_OWNER_MAP.Start, accountType: "STAFF" },
@@ -87,20 +85,19 @@ export async function createMatterAction(name: string, companyName: string, type
     data: {
       displayId,
       name,
-      subtitle: `${displayId} · ${type}`,
       matterType: type.split(" ").slice(0, 2).join(" "),
       stage: "Start",
-      companyId: company.id,
+      clientId: client.id,
       ownerId: startOwner?.id,
     },
   });
 
-  await addAuditEntry(displayId, "MATTER_CREATED", `${name} · ${companyName}`, displayId, session.user.id);
+  await addAuditEntry(displayId, "MATTER_CREATED", `${name} · ${client.name}`, displayId, session.user.id);
   revalidatePath("/clients");
   return { success: true, displayId };
 }
 
-export async function addCompanyAction(name: string) {
+export async function addAdviserGroupAction(name: string) {
   await requireStaffSession();
   const colors = [
     { bg: "#dbeafe", text: "#1d4ed8" },
@@ -109,13 +106,13 @@ export async function addCompanyAction(name: string) {
     { bg: "#fff7ed", text: "#c2410c" },
   ];
   const pick = colors[Math.floor(Math.random() * colors.length)];
-  const id = `co-${Date.now()}`;
+  const id = `ag-${Date.now()}`;
 
-  await prisma.company.create({
+  await prisma.adviserGroup.create({
     data: {
       id,
       name,
-      description: "New company · 0 clients",
+      description: "New adviser group · 0 clients",
       contactName: "No contact",
       contactEmail: "contact@example.com",
       letter: name[0].toUpperCase(),
@@ -143,7 +140,7 @@ export async function toggleTaskAction(taskId: string) {
   });
 
   const matter = await prisma.matter.findUnique({ where: { id: task.matterId } });
-  if (matter) revalidatePath(`/clients/${matter.displayId}`);
+  if (matter) revalidatePath(`/matter/${matter.displayId}`);
   return { success: true, done: !task.done };
 }
 
@@ -166,7 +163,7 @@ export async function addTaskAction(matterDisplayId: string, title: string, assi
   });
 
   await addAuditEntry(matterDisplayId, "TASK_ADDED", title, matterDisplayId, session.user.id);
-  revalidatePath(`/clients/${matterDisplayId}`);
+  revalidatePath(`/matter/${matterDisplayId}`);
   return { success: true };
 }
 
@@ -198,7 +195,7 @@ export async function saveFileNoteAction(
   });
 
   await addAuditEntry(matterDisplayId, "FILE_NOTE_ADDED", `${type} · ${subject}`, matterDisplayId, session.user.id);
-  revalidatePath(`/clients/${matterDisplayId}`);
+  revalidatePath(`/matter/${matterDisplayId}`);
   return { success: true };
 }
 
@@ -209,7 +206,7 @@ export async function approveFileNoteAction(noteId: string, matterDisplayId: str
     data: { draft: false },
   });
   await addAuditEntry(matterDisplayId, "FILE_NOTE_APPROVED", "Call note published", matterDisplayId, session.user.id);
-  revalidatePath(`/clients/${matterDisplayId}`);
+  revalidatePath(`/matter/${matterDisplayId}`);
   return { success: true };
 }
 
@@ -217,7 +214,7 @@ export async function addAuditEntryAction(matterDisplayId: string, action: strin
   const session = await requireStaffSession();
   await addAuditEntry(matterDisplayId, action, detail, matterDisplayId, session.user.id);
   revalidatePath("/audit-log");
-  if (matterDisplayId) revalidatePath(`/clients/${matterDisplayId}`);
+  if (matterDisplayId) revalidatePath(`/matter/${matterDisplayId}`);
   return { success: true };
 }
 
@@ -232,14 +229,14 @@ export async function mockLodgeAction(matterDisplayId: string) {
     session.user.id
   );
   revalidatePath("/audit-log");
-  revalidatePath(`/clients/${matterDisplayId}`);
+  revalidatePath(`/matter/${matterDisplayId}`);
   return { success: true };
 }
 
 export async function approveMatterAction(matterDisplayId: string) {
   const session = await requireStaffSession();
   await addAuditEntry(matterDisplayId, "APPROVED", "Approved by admin", matterDisplayId, session.user.id);
-  revalidatePath(`/clients/${matterDisplayId}`);
+  revalidatePath(`/matter/${matterDisplayId}`);
   return { success: true };
 }
 
@@ -262,21 +259,21 @@ export async function reassignMatterAction(matterDisplayId: string, stage: strin
 
   await addAuditEntry(matterDisplayId, "REASSIGNED", `${stage} → ${staffName}`, matterDisplayId, session.user.id);
   revalidatePath("/clients");
-  revalidatePath(`/clients/${matterDisplayId}`);
+  revalidatePath(`/matter/${matterDisplayId}`);
   return { success: true };
 }
 
 export async function approveKycAction(matterDisplayId: string) {
   const session = await requireStaffSession();
   await addAuditEntry(matterDisplayId, "KYC_APPROVED", "Manual approval", matterDisplayId, session.user.id);
-  revalidatePath(`/clients/${matterDisplayId}`);
+  revalidatePath(`/matter/${matterDisplayId}`);
   return { success: true };
 }
 
 export async function approveCallNoteAction(matterDisplayId: string) {
   const session = await requireStaffSession();
   await addAuditEntry(matterDisplayId, "CALL_NOTE_APPROVED", "Echo Notes approved", matterDisplayId, session.user.id);
-  revalidatePath(`/clients/${matterDisplayId}`);
+  revalidatePath(`/matter/${matterDisplayId}`);
   return { success: true };
 }
 

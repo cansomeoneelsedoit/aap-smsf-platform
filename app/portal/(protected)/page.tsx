@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getClientPortalMatter } from "@/lib/queries/matters";
 import { getAppSession } from "@/lib/auth";
+import { mapMatterContacts } from "@/lib/mappers";
 import { STAGES } from "@/lib/mock-data";
 
 const STAGE_PILL_MAP: Record<string, string> = {
@@ -20,6 +21,14 @@ export default async function PortalOverviewPage() {
     ? await getClientPortalMatter(session.user.id)
     : null;
 
+  const contacts = matter ? mapMatterContacts(matter.client) : null;
+  const memberNames = contacts
+    ? [
+        ...contacts.individualTrustees.map((t) => t.name),
+        ...contacts.corporateTrustees.flatMap((c) => c.directors.map((d) => d.name)),
+      ]
+    : [];
+
   const stageIdx = matter ? STAGES.indexOf(matter.stage) : 2;
   const stageProgress = STAGES.map((_, i) => {
     if (i < stageIdx) return 1;
@@ -31,9 +40,9 @@ export default async function PortalOverviewPage() {
     <>
       <div className="mb-4 rounded-brand bg-gradient-to-br from-brand-primary to-brand-orange-2 p-6 text-white">
         <div className="text-xs opacity-80">Matter {matter?.displayId ?? "—"}</div>
-        <h2 className="text-[22px] font-extrabold">{matter?.name ?? "Your SMSF"}</h2>
+        <h2 className="text-[22px] font-extrabold">{matter?.client.name ?? "Your SMSF"}</h2>
         <p className="text-[13px] opacity-85">
-          {matter?.matterType ?? "New SMSF Setup"} · Default + Accounting · $999/yr
+          {matter?.name ?? "New SMSF Setup"} · Default + Accounting · $999/yr
         </p>
         <div className="mt-4 flex gap-1.5">
           {stageProgress.map((o, i) => (
@@ -64,8 +73,8 @@ export default async function PortalOverviewPage() {
         <CardHeader><CardTitle>Matter progress</CardTitle></CardHeader>
         <CardContent className="space-y-0 p-0">
           {[
-            ["ABN", matter?.subtitle?.includes("ABN") ? matter.subtitle.split("ABN ")[1] : "12 345 678 901"],
-            ["Members", matter?.members?.map((m) => m.user.name).join(", ") ?? "John Smith, Mary Smith"],
+            ["ABN", contacts?.trust.abn ?? "—"],
+            ["Members", memberNames.length > 0 ? memberNames.join(", ") : "—"],
             ["Current stage", null],
             ["Current custodian", matter?.owner?.name ? `${matter.owner.name}` : "Michael Torres (Compliance)"],
             ["Target completion", matter?.dueDate ? matter.dueDate.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : "28 March 2026"],

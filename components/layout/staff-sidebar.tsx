@@ -42,7 +42,8 @@ function NavItem({
   const pathname = usePathname();
   const active =
     pathname === href ||
-    (href === "/clients" && pathname.startsWith("/clients/"));
+    (href === "/clients" &&
+      (pathname.startsWith("/clients/") || pathname.startsWith("/matter/")));
 
   return (
     <Link

@@ -3,35 +3,36 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { CompanyBadge } from "@/components/brand/company-badge";
+import { AdviserGroupBadge } from "@/components/brand/adviser-group-badge";
 import { StagePill } from "@/components/brand/stage-pill";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MatterContactsCard } from "@/components/matters/matter-contacts";
 import { useMockStore, useMatterActions } from "@/hooks/use-mock-store";
 import { STAGE_COLORS, STAGE_INITIALS, STAGE_OWNER_MAP, STAGES } from "@/lib/mock-data";
-import type { Client, FileNote, Task } from "@/lib/types";
+import type { FileNote, MatterContacts, MatterSummary, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function MatterDetail({
   matterId,
-  client,
+  matter,
+  contacts,
   tasks,
   fileNotes,
 }: {
   matterId: string;
-  client: Client;
+  matter: MatterSummary;
+  contacts: MatterContacts;
   tasks: Task[];
   fileNotes: FileNote[];
 }) {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") ?? "overview";
 
-  const calling = useMockStore((s) => s.calling);
   const openModal = useMockStore((s) => s.openModal);
-  const initiateCall = useMockStore((s) => s.initiateCall);
   const {
     advanceStage,
     approveMatter,
@@ -45,7 +46,7 @@ export function MatterDetail({
     useMockStore.setState({ activeMatterId: matterId });
   }, [matterId]);
 
-  const stageIdx = STAGES.indexOf(client.stage);
+  const stageIdx = STAGES.indexOf(matter.stage);
 
   return (
     <>
@@ -57,28 +58,15 @@ export function MatterDetail({
 
       <Card className="mb-4 p-5">
         <div className="mb-3.5 flex flex-wrap items-center gap-2">
-          <StagePill stage={client.stage} pillClass={client.pillClass} />
+          <StagePill stage={matter.stage} pillClass={matter.pillClass} />
           <span className="text-xs text-brand-text-3">
-            Matter <strong>{client.id}</strong>
+            Matter <strong>{matter.id}</strong>
           </span>
-          <CompanyBadge company={client.company} cbClass={client.cbClass} />
+          <AdviserGroupBadge name={matter.adviserGroup} cbClass={matter.cbClass} />
           <Badge variant="amber" className="ml-auto">KYC review</Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            className={cn(
-              "border-brand-green bg-brand-green-light text-brand-green",
-              calling && "animate-pulse border-brand-red bg-brand-red-light text-brand-red"
-            )}
-            onClick={() => initiateCall(matterId)}
-          >
-            {calling ? "⏹ End call" : "📞 Call client"}
-          </Button>
         </div>
-        <h2 className="text-[22px] font-extrabold tracking-tight">{client.name}</h2>
-        <p className="text-[13px] text-brand-text-2">
-          John & Mary Smith · john@smithfamily.com.au · 0412 345 678
-        </p>
+        <h2 className="text-[22px] font-extrabold tracking-tight">{matter.name}</h2>
+        <p className="text-[13px] text-brand-text-2">{matter.sub}</p>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex max-w-[480px] flex-1 items-center">
             {STAGES.map((s, i) => {
@@ -126,6 +114,10 @@ export function MatterDetail({
           </div>
         </div>
       </Card>
+
+      <div className="mb-4">
+        <MatterContactsCard matterId={matterId} contacts={contacts} />
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {STAGES.map((s, i) => {
@@ -176,10 +168,10 @@ export function MatterDetail({
               <CardHeader><CardTitle>Entity details</CardTitle></CardHeader>
               <CardContent className="space-y-0 p-0">
                 {[
-                  ["SMSF name", "Smith Family Superannuation Fund"],
-                  ["ABN", "12 345 678 901"],
+                  ["SMSF name", contacts.trust.name],
+                  ["ABN", contacts.trust.abn ?? "—"],
                   ["Package", "Default + Accounting — $999/yr"],
-                  ["Company group", client.company],
+                  ["Adviser group", matter.adviserGroup],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between border-b border-brand-surface-2 px-[18px] py-2 text-[13px] last:border-0">
                     <span className="text-brand-text-2">{label}</span>

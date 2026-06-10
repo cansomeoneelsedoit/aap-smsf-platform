@@ -1,32 +1,33 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ClientsTable } from "@/components/clients/clients-table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useMockStore } from "@/hooks/use-mock-store";
-import type { Client } from "@/lib/types";
+import type { MatterSummary } from "@/lib/types";
 
-export function ClientsPageClient({ clients }: { clients: Client[] }) {
+export function ClientsPageClient({ matters }: { matters: MatterSummary[] }) {
   const openModal = useMockStore((s) => s.openModal);
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState("");
-  const [companyFilter, setCompanyFilter] = useState("");
+  const [groupFilter, setGroupFilter] = useState("");
 
   const filtered = useMemo(() => {
-    return clients.filter((c) => {
+    return matters.filter((m) => {
       const q = search.toLowerCase();
       const matchSearch =
         !q ||
-        c.name.toLowerCase().includes(q) ||
-        c.id.toLowerCase().includes(q) ||
-        c.company.toLowerCase().includes(q);
-      const matchStage = !stageFilter || c.stage === stageFilter;
-      const matchCompany = !companyFilter || c.company === companyFilter;
-      return matchSearch && matchStage && matchCompany;
+        m.name.toLowerCase().includes(q) ||
+        m.id.toLowerCase().includes(q) ||
+        m.adviserGroup.toLowerCase().includes(q);
+      const matchStage = !stageFilter || m.stage === stageFilter;
+      const matchGroup = !groupFilter || m.adviserGroup === groupFilter;
+      return matchSearch && matchStage && matchGroup;
     });
-  }, [clients, search, stageFilter, companyFilter]);
+  }, [matters, search, stageFilter, groupFilter]);
 
   return (
     <>
@@ -49,20 +50,23 @@ export function ClientsPageClient({ clients }: { clients: Client[] }) {
         </select>
         <select
           className="h-10 rounded-brand-sm border-[1.5px] border-brand-border-2 bg-white px-2.5 text-[13px]"
-          value={companyFilter}
-          onChange={(e) => setCompanyFilter(e.target.value)}
+          value={groupFilter}
+          onChange={(e) => setGroupFilter(e.target.value)}
         >
-          <option value="">All companies</option>
-          {["Clime ASX", "Liberty", "RiverX", "AAP"].map((c) => (
-            <option key={c} value={c}>{c}</option>
+          <option value="">All adviser groups</option>
+          {["Clime ASX", "Liberty", "RiverX", "AAP"].map((g) => (
+            <option key={g} value={g}>{g}</option>
           ))}
         </select>
-        <Button size="sm" onClick={() => openModal("new-matter")}>
-          + New client
+        <Button size="sm" asChild>
+          <Link href="/clients/create">+ New client</Link>
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => openModal("new-matter")}>
+          + New matter
         </Button>
       </div>
       <Card>
-        <ClientsTable clients={filtered} />
+        <ClientsTable matters={filtered} />
       </Card>
     </>
   );

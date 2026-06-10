@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { CompanyBadge } from "@/components/brand/company-badge";
+import { AdviserGroupBadge } from "@/components/brand/adviser-group-badge";
 import { StagePill } from "@/components/brand/stage-pill";
 import { StatCard } from "@/components/brand/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMockStore } from "@/hooks/use-mock-store";
-import type { Client } from "@/lib/types";
+import type { MatterSummary } from "@/lib/types";
 
-export function DashboardPageClient({ clients }: { clients: Client[] }) {
+export function DashboardPageClient({ clients }: { clients: MatterSummary[] }) {
   const openModal = useMockStore((s) => s.openModal);
 
   const stageCounts = clients.reduce(
@@ -76,7 +76,7 @@ export function DashboardPageClient({ clients }: { clients: Client[] }) {
             <thead>
               <tr className="bg-brand-surface text-left text-[10px] font-bold uppercase text-brand-text-3">
                 <th className="px-4 py-2">Client</th>
-                <th className="px-4 py-2">Company</th>
+                <th className="px-4 py-2">Adviser group</th>
                 <th className="px-4 py-2">Stage</th>
                 <th className="px-4 py-2">Owner</th>
               </tr>
@@ -85,13 +85,13 @@ export function DashboardPageClient({ clients }: { clients: Client[] }) {
               {clients.slice(0, 5).map((c) => (
                 <tr key={c.id} className="cursor-pointer hover:bg-[#fafafa]">
                   <td className="border-t border-brand-surface-2 px-4 py-2.5">
-                    <Link href={`/clients/${c.id}`}>
+                    <Link href={`/matter/${c.id}`}>
                       <div className="font-semibold">{c.name}</div>
                       <div className="text-[11px] text-brand-text-3">{c.sub}</div>
                     </Link>
                   </td>
                   <td className="border-t border-brand-surface-2 px-4 py-2.5">
-                    <CompanyBadge company={c.company} cbClass={c.cbClass} />
+                    <AdviserGroupBadge name={c.adviserGroup} cbClass={c.cbClass} />
                   </td>
                   <td className="border-t border-brand-surface-2 px-4 py-2.5">
                     <StagePill stage={c.stage} pillClass={c.pillClass} />

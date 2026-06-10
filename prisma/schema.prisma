@@ -27,12 +27,26 @@ enum Stage {
   Active
 }
 
+enum PartyType {
+  PERSON
+  COMPANY
+  TRUST
+}
+
+enum PartyRole {
+  TRUSTEE
+  DIRECTOR
+  AUTHORISED_PARTY
+  MEMBER
+}
+
 model User {
   id            String      @id
   name          String
   email         String
   emailVerified Boolean     @default(false)
   image         String?
+  phone         String?
   accountType   AccountType
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -40,7 +54,7 @@ model User {
   sessions         Session[]
   accounts         Account[]
   staffProfile     StaffProfile?
-  matterMembers    MatterMember[]
+  personDetails    PersonDetails?
   ownedMatters     Matter[]          @relation("MatterOwner")
   auditEntries     AuditEntry[]
   fileNotes        FileNote[]
@@ -105,7 +119,8 @@ model StaffProfile {
   hobbies  String?
 }
 
-model Company {
+/// The adviser/referral group whose clients we administer (e.g. AAP, Liberty).
+model AdviserGroup {
   id           String  @id
   name         String
   description  String
@@ -115,7 +130,63 @@ model Company {
   bgColor      String
   textColor    String
   cbClass      String
+  clients      Party[]
+}
+
+/// Any legal person: an individual, a company, or a trust (an SMSF is a trust).
+/// A "client" is a Party of type TRUST referenced by Matter.clientId.
+model Party {
+  id             String        @id @default(cuid())
+  type           PartyType
+  name           String
+  adviserGroupId String?
+  adviserGroup   AdviserGroup? @relation(fields: [adviserGroupId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  person  PersonDetails?
+  company CompanyDetails?
+  trust   TrustDetails?
+
+  relationsOut PartyRelationship[] @relation("ParentParty")
+  relationsIn  PartyRelationship[] @relation("ChildParty")
   matters      Matter[]
+}
+
+model PersonDetails {
+  partyId   String  @id
+  party     Party   @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  userId    String? @unique
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model CompanyDetails {
+  partyId String  @id
+  party   Party   @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  acn     String?
+}
+
+model TrustDetails {
+  partyId String  @id
+  party   Party   @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  abn     String?
+}
+
+/// Role edge between parties: trust -> trustee (person or company),
+/// company -> director (person), trust -> authorised party, etc.
+model PartyRelationship {
+  id            String    @id @default(cuid())
+  parentPartyId String
+  parentParty   Party     @relation("ParentParty", fields: [parentPartyId], references: [id], onDelete: Cascade)
+  childPartyId  String
+  childParty    Party     @relation("ChildParty", fields: [childPartyId], references: [id], onDelete: Cascade)
+  role          PartyRole
+
+  @@unique([parentPartyId, childPartyId, role])
 }
 
 model Matter {
@@ -126,28 +197,16 @@ model Matter {
   matterType String
   stage      Stage
   dueDate    DateTime?
-  companyId  String
-  company    Company   @relation(fields: [companyId], references: [id])
+  clientId   String
+  client     Party     @relation(fields: [clientId], references: [id])
   ownerId    String?
   owner      User?     @relation("MatterOwner", fields: [ownerId], references: [id])
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  members      MatterMember[]
   tasks        Task[]
   fileNotes    FileNote[]
   auditEntries AuditEntry[]
-}
-
-model MatterMember {
-  id        String  @id @default(cuid())
-  matterId  String
-  matter    Matter  @relation(fields: [matterId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  isPrimary Boolean @default(false)
-
-  @@unique([matterId, userId])
 }
 
 model Task {

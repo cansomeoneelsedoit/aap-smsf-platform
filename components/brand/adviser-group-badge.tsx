@@ -8,12 +8,12 @@ const variants: Record<string, string> = {
   "cb-other": "bg-brand-surface-2 text-[#374151]",
 };
 
-export function CompanyBadge({
-  company,
+export function AdviserGroupBadge({
+  name,
   className,
   cbClass,
 }: {
-  company: string;
+  name: string;
   className?: string;
   cbClass?: string;
 }) {
@@ -26,7 +26,7 @@ export function CompanyBadge({
         className
       )}
     >
-      {company}
+      {name}
     </span>
   );
 }

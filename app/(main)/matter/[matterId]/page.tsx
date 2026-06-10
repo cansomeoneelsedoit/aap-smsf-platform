@@ -7,7 +7,8 @@ import {
 } from "@/lib/queries/matters";
 import {
   mapFileNoteToUi,
-  mapMatterToClient,
+  mapMatterContacts,
+  mapMatterToSummary,
   mapTaskToUi,
 } from "@/lib/mappers";
 
@@ -31,7 +32,8 @@ export default async function MatterDetailPage({
   return (
     <MatterDetail
       matterId={matterId}
-      client={mapMatterToClient(matter)}
+      matter={mapMatterToSummary(matter)}
+      contacts={mapMatterContacts(matter.client)}
       tasks={tasks.map(mapTaskToUi)}
       fileNotes={fileNotes.map(mapFileNoteToUi)}
     />

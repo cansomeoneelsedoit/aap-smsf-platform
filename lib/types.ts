@@ -1,12 +1,12 @@
 export type Stage = "Start" | "Prepare" | "Check" | "Lodge" | "Active";
 
-export type CompanyGroup = "Clime ASX" | "Liberty" | "RiverX" | "AAP";
+export type UiPartyType = "PERSON" | "COMPANY" | "TRUST";
 
-export interface Client {
+export interface MatterSummary {
   id: string;
   name: string;
   sub: string;
-  company: CompanyGroup | string;
+  adviserGroup: string;
   cbClass: string;
   type: string;
   stage: Stage;
@@ -51,7 +51,7 @@ export interface FileNote {
   draft?: boolean;
 }
 
-export interface Company {
+export interface AdviserGroup {
   id: string;
   name: string;
   description: string;
@@ -61,6 +61,37 @@ export interface Company {
   letter: string;
   bgColor: string;
   textColor: string;
+}
+
+export type PartyRoleLabel = "Trustee" | "Director" | "Authorised party" | "Member";
+
+export interface ContactPerson {
+  partyId: string;
+  name: string;
+  role: PartyRoleLabel;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface CorporateTrusteeContact {
+  partyId: string;
+  name: string;
+  acn: string | null;
+  directors: ContactPerson[];
+}
+
+export interface MatterContacts {
+  trust: { partyId: string; name: string; abn: string | null };
+  individualTrustees: ContactPerson[];
+  corporateTrustees: CorporateTrusteeContact[];
+  authorisedParties: ContactPerson[];
+}
+
+export interface PartySearchResult {
+  partyId: string;
+  type: UiPartyType;
+  name: string;
+  detail: string | null;
 }
 
 export type ModalId =

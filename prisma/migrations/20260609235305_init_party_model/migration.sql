@@ -7,6 +7,12 @@ CREATE TYPE "StaffRole" AS ENUM ('MASTER_OWNER', 'BOOKKEEPER', 'COMPLIANCE_OFFIC
 -- CreateEnum
 CREATE TYPE "Stage" AS ENUM ('Start', 'Prepare', 'Check', 'Lodge', 'Active');
 
+-- CreateEnum
+CREATE TYPE "PartyType" AS ENUM ('PERSON', 'COMPANY', 'TRUST');
+
+-- CreateEnum
+CREATE TYPE "PartyRole" AS ENUM ('TRUSTEE', 'DIRECTOR', 'AUTHORISED_PARTY', 'MEMBER');
+
 -- CreateTable
 CREATE TABLE "user" (
     "id" TEXT NOT NULL,
@@ -14,6 +20,7 @@ CREATE TABLE "user" (
     "email" TEXT NOT NULL,
     "emailVerified" BOOLEAN NOT NULL DEFAULT false,
     "image" TEXT,
+    "phone" TEXT,
     "accountType" "AccountType" NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -78,7 +85,7 @@ CREATE TABLE "StaffProfile" (
 );
 
 -- CreateTable
-CREATE TABLE "Company" (
+CREATE TABLE "AdviserGroup" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
@@ -89,7 +96,57 @@ CREATE TABLE "Company" (
     "textColor" TEXT NOT NULL,
     "cbClass" TEXT NOT NULL,
 
-    CONSTRAINT "Company_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "AdviserGroup_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Party" (
+    "id" TEXT NOT NULL,
+    "type" "PartyType" NOT NULL,
+    "name" TEXT NOT NULL,
+    "adviserGroupId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Party_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PersonDetails" (
+    "partyId" TEXT NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "email" TEXT,
+    "phone" TEXT,
+    "userId" TEXT,
+
+    CONSTRAINT "PersonDetails_pkey" PRIMARY KEY ("partyId")
+);
+
+-- CreateTable
+CREATE TABLE "CompanyDetails" (
+    "partyId" TEXT NOT NULL,
+    "acn" TEXT,
+
+    CONSTRAINT "CompanyDetails_pkey" PRIMARY KEY ("partyId")
+);
+
+-- CreateTable
+CREATE TABLE "TrustDetails" (
+    "partyId" TEXT NOT NULL,
+    "abn" TEXT,
+
+    CONSTRAINT "TrustDetails_pkey" PRIMARY KEY ("partyId")
+);
+
+-- CreateTable
+CREATE TABLE "PartyRelationship" (
+    "id" TEXT NOT NULL,
+    "parentPartyId" TEXT NOT NULL,
+    "childPartyId" TEXT NOT NULL,
+    "role" "PartyRole" NOT NULL,
+
+    CONSTRAINT "PartyRelationship_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -101,22 +158,12 @@ CREATE TABLE "Matter" (
     "matterType" TEXT NOT NULL,
     "stage" "Stage" NOT NULL,
     "dueDate" TIMESTAMP(3),
-    "companyId" TEXT NOT NULL,
+    "clientId" TEXT NOT NULL,
     "ownerId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Matter_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "MatterMember" (
-    "id" TEXT NOT NULL,
-    "matterId" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "isPrimary" BOOLEAN NOT NULL DEFAULT false,
-
-    CONSTRAINT "MatterMember_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -177,10 +224,13 @@ CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 CREATE UNIQUE INDEX "session_token_key" ON "session"("token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Matter_displayId_key" ON "Matter"("displayId");
+CREATE UNIQUE INDEX "PersonDetails_userId_key" ON "PersonDetails"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "MatterMember_matterId_userId_key" ON "MatterMember"("matterId", "userId");
+CREATE UNIQUE INDEX "PartyRelationship_parentPartyId_childPartyId_role_key" ON "PartyRelationship"("parentPartyId", "childPartyId", "role");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Matter_displayId_key" ON "Matter"("displayId");
 
 -- AddForeignKey
 ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -192,16 +242,31 @@ ALTER TABLE "account" ADD CONSTRAINT "account_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "StaffProfile" ADD CONSTRAINT "StaffProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Matter" ADD CONSTRAINT "Matter_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Party" ADD CONSTRAINT "Party_adviserGroupId_fkey" FOREIGN KEY ("adviserGroupId") REFERENCES "AdviserGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PersonDetails" ADD CONSTRAINT "PersonDetails_partyId_fkey" FOREIGN KEY ("partyId") REFERENCES "Party"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PersonDetails" ADD CONSTRAINT "PersonDetails_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CompanyDetails" ADD CONSTRAINT "CompanyDetails_partyId_fkey" FOREIGN KEY ("partyId") REFERENCES "Party"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TrustDetails" ADD CONSTRAINT "TrustDetails_partyId_fkey" FOREIGN KEY ("partyId") REFERENCES "Party"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartyRelationship" ADD CONSTRAINT "PartyRelationship_parentPartyId_fkey" FOREIGN KEY ("parentPartyId") REFERENCES "Party"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartyRelationship" ADD CONSTRAINT "PartyRelationship_childPartyId_fkey" FOREIGN KEY ("childPartyId") REFERENCES "Party"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Matter" ADD CONSTRAINT "Matter_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Party"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Matter" ADD CONSTRAINT "Matter_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "MatterMember" ADD CONSTRAINT "MatterMember_matterId_fkey" FOREIGN KEY ("matterId") REFERENCES "Matter"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "MatterMember" ADD CONSTRAINT "MatterMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Task" ADD CONSTRAINT "Task_matterId_fkey" FOREIGN KEY ("matterId") REFERENCES "Matter"("id") ON DELETE CASCADE ON UPDATE CASCADE;

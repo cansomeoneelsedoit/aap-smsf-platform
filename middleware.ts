@@ -4,6 +4,7 @@ import { getSessionCookie } from "better-auth/cookies";
 const STAFF_PREFIXES = [
   "/dashboard",
   "/clients",
+  "/matter",
   "/companies",
   "/preparation",
   "/compliance",
@@ -40,6 +41,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/clients/:path*",
+    "/matter/:path*",
     "/companies/:path*",
     "/preparation/:path*",
     "/compliance/:path*",

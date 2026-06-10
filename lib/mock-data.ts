@@ -1,4 +1,4 @@
-import type { AuditEntry, Client, Company, FileNote, StaffSession, Task } from "@/lib/types";
+import type { AdviserGroup, AuditEntry, FileNote, Stage, StaffSession, Task } from "@/lib/types";
 
 export const STAGES = ["Start", "Prepare", "Check", "Lodge", "Active"] as const;
 
@@ -26,15 +26,26 @@ export const STAGE_COLORS: Record<string, string> = {
   Active: "#e8591a",
 };
 
-export const INITIAL_CLIENTS: Client[] = [
-  { id: "M001", name: "Smith Family SMSF", sub: "M001 · ABN 12 345 678 901", company: "Liberty", cbClass: "cb-liberty", type: "New SMSF", stage: "Check", pillClass: "pill-check", owner: "M. Torres", due: "22 Mar" },
-  { id: "M002", name: "Johnson Retirement Fund", sub: "M002 · ABN 45 678 901 234", company: "Clime ASX", cbClass: "cb-clime", type: "Existing", stage: "Prepare", pillClass: "pill-prepare", owner: "E. Wilson", due: "25 Mar" },
-  { id: "M003", name: "Williams Corp Trustee", sub: "M003 · ACN 098 765 432", company: "AAP", cbClass: "cb-aap", type: "Corp Trustee", stage: "Lodge", pillClass: "pill-lodge", owner: "R. Park", due: "28 Mar" },
-  { id: "M004", name: "Brown Family Super", sub: "M004 · New client", company: "RiverX", cbClass: "cb-riverx", type: "New SMSF", stage: "Start", pillClass: "pill-start", owner: "E. Wilson", due: "30 Mar" },
-  { id: "M005", name: "Chen Investment Fund", sub: "M005 · Annual compliance", company: "Clime ASX", cbClass: "cb-clime", type: "Compliance", stage: "Active", pillClass: "pill-active", owner: "S. Chen", due: "—" },
-  { id: "M006", name: "Davis Investment Fund", sub: "M006 · ABN 78 901 234 567", company: "Liberty", cbClass: "cb-liberty", type: "New SMSF", stage: "Check", pillClass: "pill-check", owner: "S. Chen", due: "24 Mar" },
-  { id: "M007", name: "Nguyen SMSF", sub: "M007 · New client", company: "RiverX", cbClass: "cb-riverx", type: "New SMSF", stage: "Prepare", pillClass: "pill-prepare", owner: "E. Wilson", due: "26 Mar" },
-  { id: "M008", name: "Thompson SMSF", sub: "M008 · ATO ready", company: "Clime ASX", cbClass: "cb-clime", type: "New SMSF", stage: "Lodge", pillClass: "pill-lodge", owner: "R. Park", due: "28 Mar" },
+export interface SeedMatter {
+  id: string;
+  matterName: string;
+  clientName: string;
+  abn: string | null;
+  adviserGroupId: string;
+  type: string;
+  stage: Stage;
+  due: string;
+}
+
+export const SEED_MATTERS: SeedMatter[] = [
+  { id: "M001", matterName: "New SMSF Setup", clientName: "Smith Family Superannuation Fund", abn: "12 345 678 901", adviserGroupId: "liberty", type: "New SMSF", stage: "Check", due: "22 Mar" },
+  { id: "M002", matterName: "Existing SMSF Onboarding", clientName: "Johnson Retirement Fund", abn: "45 678 901 234", adviserGroupId: "clime", type: "Existing", stage: "Prepare", due: "25 Mar" },
+  { id: "M003", matterName: "Corporate Trustee Conversion", clientName: "Williams Super Fund", abn: "23 456 789 012", adviserGroupId: "aap", type: "Corp Trustee", stage: "Lodge", due: "28 Mar" },
+  { id: "M004", matterName: "New SMSF Setup", clientName: "Brown Family Super", abn: null, adviserGroupId: "riverx", type: "New SMSF", stage: "Start", due: "30 Mar" },
+  { id: "M005", matterName: "Annual Compliance", clientName: "Chen Investment Fund", abn: "34 567 890 123", adviserGroupId: "clime", type: "Compliance", stage: "Active", due: "—" },
+  { id: "M006", matterName: "New SMSF Setup", clientName: "Davis Investment Fund", abn: "78 901 234 567", adviserGroupId: "liberty", type: "New SMSF", stage: "Check", due: "24 Mar" },
+  { id: "M007", matterName: "New SMSF Setup", clientName: "Nguyen SMSF", abn: null, adviserGroupId: "riverx", type: "New SMSF", stage: "Prepare", due: "26 Mar" },
+  { id: "M008", matterName: "New SMSF Setup", clientName: "Thompson SMSF", abn: null, adviserGroupId: "clime", type: "New SMSF", stage: "Lodge", due: "28 Mar" },
 ];
 
 export const DEMO_ACCOUNTS: StaffSession[] = [
@@ -43,7 +54,7 @@ export const DEMO_ACCOUNTS: StaffSession[] = [
   { email: "michael@aap.com.au", name: "Michael Torres", role: "Compliance Officer", initials: "MT", color: "#059669" },
 ];
 
-export const INITIAL_COMPANIES: Company[] = [
+export const INITIAL_ADVISER_GROUPS: AdviserGroup[] = [
   { id: "clime", name: "Clime ASX", description: "Referrer · Financial planning", clients: 8, active: 5, contact: "David Chen · david@clime.com.au", letter: "C", bgColor: "#dbeafe", textColor: "#1d4ed8" },
   { id: "liberty", name: "Liberty", description: "Referrer · Mortgage broker", clients: 5, active: 3, contact: "Sarah Lane · sarah@liberty.com.au", letter: "L", bgColor: "#dcfce7", textColor: "#15803d" },
   { id: "riverx", name: "RiverX", description: "Referrer · Wealth management", clients: 3, active: 1, contact: "Mark Rivers · mark@riverx.com.au", letter: "R", bgColor: "#fdf4ff", textColor: "#7e22ce" },
@@ -69,10 +80,3 @@ export const INITIAL_FILE_NOTES: FileNote[] = [
   { id: "fn1", type: "Call", subject: "Outbound call — Trust deed discussion", body: "Discussed trust deed requirements with John Smith. Client confirmed they have a copy of original deed from 2018.", author: "Emma Wilson", time: "20 Mar 2026 · 09:23", tags: ["trust deed", "kyc delay"], draft: true },
   { id: "fn2", type: "Internal note", subject: "KYC reminder sent to Mary Smith", body: "Automated reminder sent. Client overseas until 24 March.", author: "Michael Torres", time: "19 Mar 2026 · 14:10", tags: ["kyc"], pinned: true },
 ];
-
-export const COMPANY_CB_MAP: Record<string, string> = {
-  "Clime ASX": "cb-clime",
-  Liberty: "cb-liberty",
-  RiverX: "cb-riverx",
-  AAP: "cb-aap",
-};

@@ -2,9 +2,9 @@
 
 import { QueueList } from "@/components/queues/queue-list";
 import { useMatterActions } from "@/hooks/use-mock-store";
-import type { Client } from "@/lib/types";
+import type { MatterSummary } from "@/lib/types";
 
-export function LodgementPageClient({ matters }: { matters: Client[] }) {
+export function LodgementPageClient({ matters }: { matters: MatterSummary[] }) {
   const { mockLodge } = useMatterActions();
 
   return (

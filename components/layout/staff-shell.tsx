@@ -32,8 +32,10 @@ export function StaffShell({
   const openModal = useMockStore((s) => s.openModal);
 
   let title = "Matter Detail";
-  if (pathname.startsWith("/clients/")) {
+  if (pathname.startsWith("/matter/")) {
     title = "Matter Detail";
+  } else if (pathname === "/clients/create") {
+    title = "New Client";
   } else {
     title = titleMap[pathname] ?? "Admin Autopilot";
   }
@@ -48,8 +50,11 @@ export function StaffShell({
             <Input placeholder="Search clients, ABN, fund name, company…" className="h-9 text-[13px]" />
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/clients/create">+ New client</Link>
+            </Button>
             <Button variant="outline" size="sm" onClick={() => openModal("new-matter")}>
-              + New client
+              + New matter
             </Button>
             <Button size="sm" asChild>
               <Link href="/onboard">Onboarding ↗</Link>

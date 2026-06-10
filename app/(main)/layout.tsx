@@ -4,8 +4,10 @@ import { StaffShell } from "@/components/layout/staff-shell";
 
 export default async function MainLayout({
   children,
+  modal,
 }: {
   children: React.ReactNode;
+  modal: React.ReactNode;
 }) {
   const session = await getAppSession();
 
@@ -17,5 +19,10 @@ export default async function MainLayout({
     redirect("/portal");
   }
 
-  return <StaffShell session={session}>{children}</StaffShell>;
+  return (
+    <StaffShell session={session}>
+      {children}
+      {modal}
+    </StaffShell>
+  );
 }

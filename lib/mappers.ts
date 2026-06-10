@@ -1,5 +1,28 @@
-import type { Stage as UiStage, Client, Company, AuditEntry, Task, FileNote } from "@/lib/types";
-import type { Company as DbCompany, Matter, User, StaffProfile, Task as DbTask, FileNote as DbFileNote, AuditEntry as DbAuditEntry, Stage } from "@/generated/prisma/client";
+import type {
+  Stage as UiStage,
+  MatterSummary,
+  AdviserGroup as UiAdviserGroup,
+  AuditEntry,
+  Task,
+  FileNote,
+  MatterContacts,
+  ContactPerson,
+} from "@/lib/types";
+import type {
+  AdviserGroup as DbAdviserGroup,
+  Matter,
+  Party,
+  PersonDetails,
+  CompanyDetails,
+  TrustDetails,
+  PartyRelationship,
+  User,
+  StaffProfile,
+  Task as DbTask,
+  FileNote as DbFileNote,
+  AuditEntry as DbAuditEntry,
+  Stage,
+} from "@/generated/prisma/client";
 
 const STAGE_PILL_MAP: Record<Stage, string> = {
   Start: "pill-start",
@@ -15,18 +38,32 @@ function shortOwnerName(name: string): string {
   return `${parts[0][0]}. ${parts[1]}`;
 }
 
-type MatterWithRelations = Matter & {
-  company: DbCompany;
+export type PersonParty = Party & { person: PersonDetails | null };
+
+export type TrusteeParty = Party & {
+  person: PersonDetails | null;
+  company: CompanyDetails | null;
+  relationsOut: (PartyRelationship & { childParty: PersonParty })[];
+};
+
+export type ClientParty = Party & {
+  adviserGroup: DbAdviserGroup | null;
+  trust: TrustDetails | null;
+  relationsOut: (PartyRelationship & { childParty: TrusteeParty })[];
+};
+
+export type MatterWithRelations = Matter & {
+  client: Party & { adviserGroup: DbAdviserGroup | null };
   owner: (User & { staffProfile: StaffProfile | null }) | null;
 };
 
-export function mapMatterToClient(matter: MatterWithRelations): Client {
+export function mapMatterToSummary(matter: MatterWithRelations): MatterSummary {
   return {
     id: matter.displayId,
-    name: matter.name,
-    sub: matter.subtitle ?? matter.displayId,
-    company: matter.company.name,
-    cbClass: matter.company.cbClass,
+    name: matter.client.name,
+    sub: `${matter.displayId} · ${matter.name}`,
+    adviserGroup: matter.client.adviserGroup?.name ?? "—",
+    cbClass: matter.client.adviserGroup?.cbClass ?? "cb-other",
     type: matter.matterType,
     stage: matter.stage as UiStage,
     pillClass: STAGE_PILL_MAP[matter.stage],
@@ -37,22 +74,101 @@ export function mapMatterToClient(matter: MatterWithRelations): Client {
   };
 }
 
-export function mapCompanyToUi(
-  company: DbCompany & { matters: { stage: Stage }[] }
-): Company {
-  const clients = company.matters.length;
-  const active = company.matters.filter((m) => m.stage === "Active").length;
+function mapPersonContact(
+  party: PersonParty,
+  role: ContactPerson["role"]
+): ContactPerson {
+  return {
+    partyId: party.id,
+    name: party.name,
+    role,
+    email: party.person?.email ?? null,
+    phone: party.person?.phone ?? null,
+  };
+}
+
+export function mapMatterContacts(client: ClientParty): MatterContacts {
+  const contacts: MatterContacts = {
+    trust: {
+      partyId: client.id,
+      name: client.name,
+      abn: client.trust?.abn ?? null,
+    },
+    individualTrustees: [],
+    corporateTrustees: [],
+    authorisedParties: [],
+  };
+
+  for (const rel of client.relationsOut) {
+    const party = rel.childParty;
+
+    if (rel.role === "TRUSTEE" && party.type === "PERSON") {
+      contacts.individualTrustees.push(mapPersonContact(party, "Trustee"));
+    } else if (rel.role === "TRUSTEE" && party.type === "COMPANY") {
+      contacts.corporateTrustees.push({
+        partyId: party.id,
+        name: party.name,
+        acn: party.company?.acn ?? null,
+        directors: party.relationsOut
+          .filter((r) => r.role === "DIRECTOR" && r.childParty.type === "PERSON")
+          .map((r) => mapPersonContact(r.childParty, "Director")),
+      });
+    } else if (rel.role === "AUTHORISED_PARTY" && party.type === "PERSON") {
+      contacts.authorisedParties.push(mapPersonContact(party, "Authorised party"));
+    }
+  }
+
+  return contacts;
+}
+
+export interface EditableParty {
+  id: string;
+  type: "PERSON" | "COMPANY" | "TRUST";
+  name: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  acn: string | null;
+  abn: string | null;
+}
+
+export function mapPartyToEditable(
+  party: Party & {
+    person: PersonDetails | null;
+    company: CompanyDetails | null;
+    trust: TrustDetails | null;
+  }
+): EditableParty {
+  return {
+    id: party.id,
+    type: party.type,
+    name: party.name,
+    firstName: party.person?.firstName ?? null,
+    lastName: party.person?.lastName ?? null,
+    email: party.person?.email ?? null,
+    phone: party.person?.phone ?? null,
+    acn: party.company?.acn ?? null,
+    abn: party.trust?.abn ?? null,
+  };
+}
+
+export function mapAdviserGroupToUi(
+  group: DbAdviserGroup & { clients: { matters: { stage: Stage }[] }[] }
+): UiAdviserGroup {
+  const matters = group.clients.flatMap((c) => c.matters);
+  const active = matters.filter((m) => m.stage === "Active").length;
 
   return {
-    id: company.id,
-    name: company.name,
-    description: company.description,
-    clients,
+    id: group.id,
+    name: group.name,
+    description: group.description,
+    clients: group.clients.length,
     active,
-    contact: `${company.contactName} · ${company.contactEmail}`,
-    letter: company.letter,
-    bgColor: company.bgColor,
-    textColor: company.textColor,
+    contact: `${group.contactName} · ${group.contactEmail}`,
+    letter: group.letter,
+    bgColor: group.bgColor,
+    textColor: group.textColor,
   };
 }
 
