@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 
 const mainNav = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/clients", label: "Clients", badge: "12" },
+  { href: "/matters", label: "Matters", badge: "12" },
+  { href: "/clients", label: "Clients" },
   { href: "/companies", label: "Companies" },
 ];
 
@@ -42,8 +43,9 @@ function NavItem({
   const pathname = usePathname();
   const active =
     pathname === href ||
+    (href === "/matters" && pathname.startsWith("/matters/")) ||
     (href === "/clients" &&
-      (pathname.startsWith("/clients/") || pathname.startsWith("/matter/")));
+      (pathname.startsWith("/clients/") || pathname.startsWith("/parties/")));
 
   return (
     <Link

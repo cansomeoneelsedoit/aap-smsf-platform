@@ -1,15 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ClientsTable } from "@/components/clients/clients-table";
+import { MattersTable } from "@/components/matters/matters-table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useMockStore } from "@/hooks/use-mock-store";
 import type { MatterSummary } from "@/lib/types";
 
-export function ClientsPageClient({ matters }: { matters: MatterSummary[] }) {
+export function MattersPageClient({ matters }: { matters: MatterSummary[] }) {
   const openModal = useMockStore((s) => s.openModal);
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState("");
@@ -34,7 +33,7 @@ export function ClientsPageClient({ matters }: { matters: MatterSummary[] }) {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Input
           className="min-w-[200px] flex-1"
-          placeholder="Search clients, ABN, fund name…"
+          placeholder="Search matters, fund name, matter ID…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -58,15 +57,12 @@ export function ClientsPageClient({ matters }: { matters: MatterSummary[] }) {
             <option key={g} value={g}>{g}</option>
           ))}
         </select>
-        <Button size="sm" asChild>
-          <Link href="/clients/create">+ New client</Link>
-        </Button>
         <Button variant="outline" size="sm" onClick={() => openModal("new-matter")}>
           + New matter
         </Button>
       </div>
       <Card>
-        <ClientsTable matters={filtered} />
+        <MattersTable matters={filtered} />
       </Card>
     </>
   );

@@ -23,7 +23,7 @@ export function DashboardPageClient({ clients }: { clients: MatterSummary[] }) {
   return (
     <>
       <div className="mb-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total clients" value={String(clients.length)} tag="Live from database" tagVariant="orange" />
+        <StatCard label="Total matters" value={String(clients.length)} tag="Live from database" tagVariant="orange" />
         <StatCard label="Pending handoffs" value="3" tag="Awaiting acceptance" tagVariant="amber" />
         <StatCard label="KYC pending" value="5" tag="2 overdue" tagVariant="red" />
         <StatCard label="Call notes to approve" value="2" tag="Draft ready" tagVariant="purple" />
@@ -31,11 +31,11 @@ export function DashboardPageClient({ clients }: { clients: MatterSummary[] }) {
 
       <div className="mb-5 grid grid-cols-2 gap-2.5 md:grid-cols-5">
         {[
-          { stage: "Start", color: "#3b82f6", href: "/clients" },
+          { stage: "Start", color: "#3b82f6", href: "/matters" },
           { stage: "Prepare", color: "#a855f7", href: "/preparation" },
           { stage: "Check", color: "#e8591a", href: "/compliance" },
           { stage: "Lodge", color: "#d97706", href: "/lodgement" },
-          { stage: "Active", color: "#16a34a", href: "/clients" },
+          { stage: "Active", color: "#16a34a", href: "/matters" },
         ].map((s) => (
           <Link
             key={s.stage}
@@ -67,9 +67,9 @@ export function DashboardPageClient({ clients }: { clients: MatterSummary[] }) {
       <div className="grid gap-3.5 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Recent clients</CardTitle>
+            <CardTitle>Recent matters</CardTitle>
             <Button variant="outline" size="xs" asChild>
-              <Link href="/clients">View all</Link>
+              <Link href="/matters">View all</Link>
             </Button>
           </CardHeader>
           <table className="w-full border-collapse">
@@ -85,7 +85,7 @@ export function DashboardPageClient({ clients }: { clients: MatterSummary[] }) {
               {clients.slice(0, 5).map((c) => (
                 <tr key={c.id} className="cursor-pointer hover:bg-[#fafafa]">
                   <td className="border-t border-brand-surface-2 px-4 py-2.5">
-                    <Link href={`/matter/${c.id}`}>
+                    <Link href={`/matters/${c.id}`}>
                       <div className="font-semibold">{c.name}</div>
                       <div className="text-[11px] text-brand-text-3">{c.sub}</div>
                     </Link>

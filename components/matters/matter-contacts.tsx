@@ -1,50 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { addAuditEntryAction } from "@/lib/actions/matter-actions";
-import { buildCallUrl } from "@/lib/threecx";
+import { CallButton } from "@/components/contacts/call-button";
 import type { ContactPerson, MatterContacts } from "@/lib/types";
-
-function CallButton({
-  matterId,
-  name,
-  phone,
-}: {
-  matterId: string;
-  name: string;
-  phone: string | null;
-}) {
-  const callUrl = phone ? buildCallUrl(phone) : null;
-
-  if (!callUrl) {
-    return (
-      <Button variant="outline" size="xs" disabled>
-        No phone
-      </Button>
-    );
-  }
-
-  const handleCall = () => {
-    window.open(callUrl, "_blank", "noopener,noreferrer");
-    toast.success(`Dialling ${name} via 3CX…`);
-    void addAuditEntryAction(matterId, "CALL_INITIATED", `3CX outbound · ${name} · ${phone}`);
-  };
-
-  return (
-    <Button
-      variant="outline"
-      size="xs"
-      className="border-brand-green bg-brand-green-light text-brand-green"
-      onClick={handleCall}
-    >
-      📞 Call
-    </Button>
-  );
-}
 
 function PersonRow({
   matterId,
@@ -64,17 +23,19 @@ function PersonRow({
       }
     >
       <Link
-        href={`/matter/${matterId}/party/${person.partyId}`}
+        href={`/matters/${matterId}/party/${person.partyId}`}
         className="min-w-0 flex-1 hover:underline"
       >
-        <div className="truncate text-[13px] font-semibold">{person.name}</div>
+        <div className="truncate text-[13px] font-semibold">
+          {person.name}{" "}
+          <span className="font-normal text-brand-text-3">• {person.role}</span>
+        </div>
         <div className="truncate text-[11px] text-brand-text-3">
           {person.phone ?? "No phone"}
           {person.email ? ` · ${person.email}` : ""}
         </div>
       </Link>
-      <Badge variant="gray" className="shrink-0">{person.role}</Badge>
-      <CallButton matterId={matterId} name={person.name} phone={person.phone} />
+      <CallButton name={person.name} phone={person.phone} auditMatterId={matterId} />
     </div>
   );
 }
@@ -93,7 +54,7 @@ export function MatterContactsCard({
       </CardHeader>
       <CardContent className="pt-1">
         <Link
-          href={`/matter/${matterId}/party/${contacts.trust.partyId}`}
+          href={`/clients/${contacts.trust.partyId}`}
           className="block border-b border-brand-surface-2 py-2 hover:underline"
         >
           <div className="text-[13px] font-semibold">{contacts.trust.name}</div>
@@ -110,15 +71,17 @@ export function MatterContactsCard({
           <div key={company.partyId}>
             <div className="flex items-center gap-2.5 border-b border-brand-surface-2 py-2">
               <Link
-                href={`/matter/${matterId}/party/${company.partyId}`}
+                href={`/matters/${matterId}/party/${company.partyId}`}
                 className="min-w-0 flex-1 hover:underline"
               >
-                <div className="truncate text-[13px] font-semibold">{company.name}</div>
+                <div className="truncate text-[13px] font-semibold">
+                  {company.name}{" "}
+                  <span className="font-normal text-brand-text-3">• Trustee</span>
+                </div>
                 <div className="truncate text-[11px] text-brand-text-3">
                   {company.acn ? `ACN ${company.acn}` : "ACN not recorded"}
                 </div>
               </Link>
-              <Badge variant="gray" className="shrink-0">Corporate trustee</Badge>
             </div>
             {company.directors.map((d) => (
               <PersonRow key={d.partyId} matterId={matterId} person={d} nested />

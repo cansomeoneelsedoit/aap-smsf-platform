@@ -151,6 +151,7 @@ export async function createClientAction(input: CreateClientInput) {
     },
   });
 
+  revalidatePath("/parties");
   revalidatePath("/clients");
   return { success: true, clientPartyId };
 }
@@ -193,7 +194,7 @@ export interface UpdatePartyInput {
 
 export async function updatePartyAction(
   partyId: string,
-  matterDisplayId: string,
+  matterDisplayId: string | null,
   input: UpdatePartyInput
 ) {
   const session = await requireStaffSession();
@@ -248,7 +249,140 @@ export async function updatePartyAction(
     },
   });
 
+  revalidatePath("/parties");
   revalidatePath("/clients");
-  if (matterDisplayId) revalidatePath(`/matter/${matterDisplayId}`);
+  revalidatePath(`/parties/${partyId}`);
+  revalidatePath(`/clients/${partyId}`);
+  if (matterDisplayId) revalidatePath(`/matters/${matterDisplayId}`);
   return { success: true };
+}
+
+export async function addTrusteeAction(
+  clientPartyId: string,
+  personRef?: PersonRef,
+  companyRef?: { partyId?: string; newCompany?: NewCompanyInput }
+) {
+  await requireStaffSession();
+
+  const client = await prisma.party.findUnique({
+    where: { id: clientPartyId },
+    include: { relationsOut: true },
+  });
+  if (!client || client.type !== "TRUST") return { error: "Client not found" };
+
+  const trusteeCount = client.relationsOut.filter((r) => r.role === "TRUSTEE").length;
+  if (trusteeCount >= 4) return { error: "A maximum of 4 trustees is allowed" };
+
+  if (personRef) {
+    const hasCorporate = await prisma.partyRelationship.count({
+      where: {
+        parentPartyId: clientPartyId,
+        role: "TRUSTEE",
+        childParty: { type: "COMPANY" },
+      },
+    });
+    if (hasCorporate > 0) return { error: "Remove the corporate trustee before adding individuals" };
+
+    const personPartyId = await prisma.$transaction((tx) => resolvePersonParty(tx, personRef));
+    await prisma.partyRelationship.create({
+      data: { parentPartyId: clientPartyId, childPartyId: personPartyId, role: "TRUSTEE" },
+    });
+
+    revalidatePartyPaths(clientPartyId);
+    return { success: true, partyId: personPartyId };
+  } else if (companyRef) {
+    const hasIndividual = await prisma.partyRelationship.count({
+      where: {
+        parentPartyId: clientPartyId,
+        role: "TRUSTEE",
+        childParty: { type: "PERSON" },
+      },
+    });
+    if (hasIndividual > 0) return { error: "Remove individual trustees before adding a corporate trustee" };
+
+    let companyPartyId = companyRef.partyId;
+    if (!companyPartyId) {
+      if (!companyRef.newCompany?.name.trim()) return { error: "Company name is required" };
+      const company = await prisma.party.create({
+        data: {
+          type: "COMPANY",
+          name: companyRef.newCompany.name.trim(),
+          company: { create: { acn: companyRef.newCompany.acn || null } },
+        },
+      });
+      companyPartyId = company.id;
+    }
+
+    await prisma.partyRelationship.create({
+      data: { parentPartyId: clientPartyId, childPartyId: companyPartyId, role: "TRUSTEE" },
+    });
+
+    revalidatePartyPaths(clientPartyId);
+    return { success: true, partyId: companyPartyId };
+  } else {
+    return { error: "Invalid trustee reference" };
+  }
+}
+
+export async function removeTrusteeAction(clientPartyId: string, childPartyId: string) {
+  await requireStaffSession();
+
+  const rel = await prisma.partyRelationship.findFirst({
+    where: { parentPartyId: clientPartyId, childPartyId, role: "TRUSTEE" },
+  });
+  if (!rel) return { error: "Trustee not found" };
+
+  await prisma.partyRelationship.delete({ where: { id: rel.id } });
+  revalidatePartyPaths(clientPartyId);
+  return { success: true };
+}
+
+export async function addDirectorAction(companyPartyId: string, personRef: PersonRef) {
+  await requireStaffSession();
+
+  const company = await prisma.party.findUnique({ where: { id: companyPartyId } });
+  if (!company || company.type !== "COMPANY") return { error: "Company not found" };
+
+  const personPartyId = await prisma.$transaction((tx) => resolvePersonParty(tx, personRef));
+  await prisma.partyRelationship.upsert({
+    where: {
+      parentPartyId_childPartyId_role: {
+        parentPartyId: companyPartyId,
+        childPartyId: personPartyId,
+        role: "DIRECTOR",
+      },
+    },
+    create: { parentPartyId: companyPartyId, childPartyId: personPartyId, role: "DIRECTOR" },
+    update: {},
+  });
+
+  const trustRel = await prisma.partyRelationship.findFirst({
+    where: { childPartyId: companyPartyId, role: "TRUSTEE" },
+  });
+  if (trustRel) revalidatePartyPaths(trustRel.parentPartyId);
+  return { success: true, partyId: personPartyId };
+}
+
+export async function removeDirectorAction(companyPartyId: string, personPartyId: string) {
+  await requireStaffSession();
+
+  const rel = await prisma.partyRelationship.findFirst({
+    where: { parentPartyId: companyPartyId, childPartyId: personPartyId, role: "DIRECTOR" },
+  });
+  if (!rel) return { error: "Director not found" };
+
+  await prisma.partyRelationship.delete({ where: { id: rel.id } });
+
+  const trustRel = await prisma.partyRelationship.findFirst({
+    where: { childPartyId: companyPartyId, role: "TRUSTEE" },
+  });
+  if (trustRel) revalidatePartyPaths(trustRel.parentPartyId);
+  return { success: true };
+}
+
+function revalidatePartyPaths(partyId: string) {
+  revalidatePath("/parties");
+  revalidatePath("/clients");
+  revalidatePath(`/parties/${partyId}`);
+  revalidatePath(`/clients/${partyId}`);
 }

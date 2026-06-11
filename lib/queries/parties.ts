@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { mapClientPartyToSummary, mapClientPartyWithMatters } from "@/lib/mappers";
 import type { PartyType } from "@/generated/prisma/client";
 
 export async function searchParties(type: PartyType, query: string) {
@@ -24,4 +25,54 @@ export async function getClientParties() {
     include: { adviserGroup: true, trust: true },
     orderBy: { name: "asc" },
   });
+}
+
+const clientListInclude = {
+  adviserGroup: true,
+  trust: true,
+  matters: { select: { id: true } },
+} as const;
+
+/** Top-level client parties for the clients list page. */
+export async function getClientPartySummaries() {
+  const parties = await prisma.party.findMany({
+    where: { type: "TRUST" },
+    include: clientListInclude,
+    orderBy: { name: "asc" },
+  });
+
+  return parties.map(mapClientPartyToSummary);
+}
+
+const clientDetailInclude = {
+  adviserGroup: true,
+  trust: true,
+  matters: {
+    include: { owner: { include: { staffProfile: true } } },
+    orderBy: { displayId: "desc" as const },
+  },
+  relationsOut: {
+    include: {
+      childParty: {
+        include: {
+          person: true,
+          company: true,
+          relationsOut: {
+            include: { childParty: { include: { person: true } } },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+/** Full client party with matters and trustee graph for the detail page. */
+export async function getClientPartyDetail(partyId: string) {
+  const party = await prisma.party.findUnique({
+    where: { id: partyId, type: "TRUST" },
+    include: clientDetailInclude,
+  });
+
+  if (!party) return null;
+  return mapClientPartyWithMatters(party);
 }

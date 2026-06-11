@@ -3,8 +3,9 @@ import { getSessionCookie } from "better-auth/cookies";
 
 const STAFF_PREFIXES = [
   "/dashboard",
+  "/matters",
+  "/parties",
   "/clients",
-  "/matter",
   "/companies",
   "/preparation",
   "/compliance",
@@ -40,8 +41,10 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
-    "/clients/:path*",
+    "/matters/:path*",
     "/matter/:path*",
+    "/parties/:path*",
+    "/clients/:path*",
     "/companies/:path*",
     "/preparation/:path*",
     "/compliance/:path*",

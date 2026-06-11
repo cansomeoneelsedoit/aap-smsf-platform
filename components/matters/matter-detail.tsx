@@ -50,9 +50,9 @@ export function MatterDetail({
 
   return (
     <>
-      <Link href="/clients">
+      <Link href="/matters">
         <Button variant="outline" size="xs" className="mb-3.5">
-          ← Back to clients
+          ← Back to matters
         </Button>
       </Link>
 

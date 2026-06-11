@@ -94,6 +94,23 @@ export interface PartySearchResult {
   detail: string | null;
 }
 
+export interface ClientSummary {
+  id: string;
+  name: string;
+  abn: string | null;
+  adviserGroup: string;
+  cbClass: string;
+  matterCount: number;
+}
+
+export interface ClientMatterSummary {
+  id: string;
+  name: string;
+  type: string;
+  stage: Stage;
+  pillClass: string;
+}
+
 export type ModalId =
   | "sign"
   | "handoffs"

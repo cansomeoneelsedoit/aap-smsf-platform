@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { StaffSidebar } from "@/components/layout/staff-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,9 @@ import type { Session } from "@/lib/auth";
 
 const titleMap: Record<string, string> = {
   "/dashboard": "Dashboard",
+  "/matters": "Matters",
   "/clients": "Clients",
+  "/parties": "Clients",
   "/companies": "Companies",
   "/preparation": "Preparation Queue",
   "/compliance": "Compliance Queue",
@@ -31,11 +33,15 @@ export function StaffShell({
   const pathname = usePathname();
   const openModal = useMockStore((s) => s.openModal);
 
-  let title = "Matter Detail";
-  if (pathname.startsWith("/matter/")) {
+  let title = "Admin Autopilot";
+  if (pathname.startsWith("/matters/")) {
     title = "Matter Detail";
-  } else if (pathname === "/clients/create") {
-    title = "New Client";
+  } else if (pathname.startsWith("/parties/") || pathname.startsWith("/clients/")) {
+    if (pathname.endsWith("/create")) {
+      title = "New Client";
+    } else if (pathname.match(/\/(parties|clients)\/[^/]+$/)) {
+      title = "Client Detail";
+    }
   } else {
     title = titleMap[pathname] ?? "Admin Autopilot";
   }

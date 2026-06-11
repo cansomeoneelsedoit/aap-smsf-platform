@@ -38,7 +38,7 @@ export function QueueList({ items, intro }: { items: QueueItemData[]; intro?: st
             </div>
             {item.matterId ? (
               <Button size="sm" asChild onClick={(e) => e.stopPropagation()}>
-                <Link href={`/matter/${item.matterId}`}>{item.action ?? "Open"}</Link>
+                <Link href={`/matters/${item.matterId}`}>{item.action ?? "Open"}</Link>
               </Button>
             ) : (
               <Button size="sm" onClick={item.onAction}>

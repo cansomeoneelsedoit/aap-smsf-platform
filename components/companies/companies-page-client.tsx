@@ -19,7 +19,7 @@ export function CompaniesPageClient({ groups }: { groups: AdviserGroup[] }) {
       <div className="grid gap-3.5 md:grid-cols-3">
         {groups.map((co) => (
           <Card key={co.id} className="cursor-pointer transition-shadow hover:shadow-md">
-            <Link href={`/clients?group=${encodeURIComponent(co.name)}`} className="block p-5">
+            <Link href={`/matters?group=${encodeURIComponent(co.name)}`} className="block p-5">
               <div className="mb-3.5 flex items-center gap-3">
                 <div
                   className="flex h-11 w-11 items-center justify-center rounded-brand-sm text-lg font-extrabold"

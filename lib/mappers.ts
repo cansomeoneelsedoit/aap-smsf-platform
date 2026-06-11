@@ -7,6 +7,8 @@ import type {
   FileNote,
   MatterContacts,
   ContactPerson,
+  ClientSummary,
+  ClientMatterSummary,
 } from "@/lib/types";
 import type {
   AdviserGroup as DbAdviserGroup,
@@ -131,6 +133,64 @@ export interface EditableParty {
   phone: string | null;
   acn: string | null;
   abn: string | null;
+}
+
+export type ClientPartyListItem = Party & {
+  adviserGroup: DbAdviserGroup | null;
+  trust: TrustDetails | null;
+  matters: { id: string }[];
+};
+
+export type ClientPartyDetail = ClientParty & {
+  matters: (Matter & { owner: (User & { staffProfile: StaffProfile | null }) | null })[];
+};
+
+export interface ClientPartyDetailUi {
+  id: string;
+  name: string;
+  abn: string | null;
+  adviserGroup: string;
+  adviserGroupId: string | null;
+  cbClass: string;
+  contacts: MatterContacts;
+  currentMatters: ClientMatterSummary[];
+  previousMatters: ClientMatterSummary[];
+}
+
+export function mapClientPartyToSummary(party: ClientPartyListItem): ClientSummary {
+  return {
+    id: party.id,
+    name: party.name,
+    abn: party.trust?.abn ?? null,
+    adviserGroup: party.adviserGroup?.name ?? "—",
+    cbClass: party.adviserGroup?.cbClass ?? "cb-other",
+    matterCount: party.matters.length,
+  };
+}
+
+function mapClientMatterSummary(matter: Matter): ClientMatterSummary {
+  return {
+    id: matter.displayId,
+    name: matter.name,
+    type: matter.matterType,
+    stage: matter.stage as UiStage,
+    pillClass: STAGE_PILL_MAP[matter.stage],
+  };
+}
+
+export function mapClientPartyWithMatters(party: ClientPartyDetail): ClientPartyDetailUi {
+  const matters = party.matters.map(mapClientMatterSummary);
+  return {
+    id: party.id,
+    name: party.name,
+    abn: party.trust?.abn ?? null,
+    adviserGroup: party.adviserGroup?.name ?? "—",
+    adviserGroupId: party.adviserGroupId,
+    cbClass: party.adviserGroup?.cbClass ?? "cb-other",
+    contacts: mapMatterContacts(party),
+    currentMatters: matters.filter((m) => m.stage !== "Active"),
+    previousMatters: matters.filter((m) => m.stage === "Active"),
+  };
 }
 
 export function mapPartyToEditable(

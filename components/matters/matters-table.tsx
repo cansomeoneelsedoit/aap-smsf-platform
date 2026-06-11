@@ -1,11 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AdviserGroupBadge } from "@/components/brand/adviser-group-badge";
 import { StagePill } from "@/components/brand/stage-pill";
 import type { MatterSummary } from "@/lib/types";
 
-export function ClientsTable({ matters }: { matters: MatterSummary[] }) {
+export function MattersTable({ matters }: { matters: MatterSummary[] }) {
+  const router = useRouter();
+
   return (
     <table className="w-full border-collapse">
       <thead>
@@ -20,12 +22,14 @@ export function ClientsTable({ matters }: { matters: MatterSummary[] }) {
       </thead>
       <tbody>
         {matters.map((m) => (
-          <tr key={m.id} className="cursor-pointer hover:bg-[#fafafa]">
+          <tr
+            key={m.id}
+            className="cursor-pointer hover:bg-[#fafafa]"
+            onClick={() => router.push(`/matters/${m.id}`)}
+          >
             <td className="border-b border-brand-surface-2 px-4 py-2.5">
-              <Link href={`/matter/${m.id}`} className="block">
-                <div className="font-semibold text-brand-dark">{m.name}</div>
-                <div className="text-[11px] text-brand-text-3">{m.sub}</div>
-              </Link>
+              <div className="font-semibold text-brand-dark">{m.name}</div>
+              <div className="text-[11px] text-brand-text-3">{m.sub}</div>
             </td>
             <td className="border-b border-brand-surface-2 px-4 py-2.5">
               <AdviserGroupBadge name={m.adviserGroup} cbClass={m.cbClass} />

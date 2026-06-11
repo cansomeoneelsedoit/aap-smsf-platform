@@ -18,15 +18,20 @@ import {
   advanceStageAction,
   toggleTaskAction,
 } from "@/lib/actions/matter-actions";
-import type { ModalId } from "@/lib/types";
+import type { ModalId, PartySearchResult } from "@/lib/types";
 
 interface UiStore {
   activeModal: ModalId | null;
   activeMatterId: string;
   signDocName: string;
   notificationsRead: boolean;
-  openModal: (id: ModalId, meta?: { signDocName?: string; matterId?: string }) => void;
+  preselectedMatterClient: PartySearchResult | null;
+  openModal: (
+    id: ModalId,
+    meta?: { signDocName?: string; matterId?: string; matterClient?: PartySearchResult }
+  ) => void;
   closeModal: () => void;
+  setPreselectedMatterClient: (client: PartySearchResult | null) => void;
   markAllRead: () => void;
 }
 
@@ -35,15 +40,19 @@ export const useMockStore = create<UiStore>()((set, get) => ({
   activeMatterId: "M001",
   signDocName: "",
   notificationsRead: false,
+  preselectedMatterClient: null,
 
   openModal: (id, meta) =>
     set({
       activeModal: id,
       signDocName: meta?.signDocName ?? get().signDocName,
       activeMatterId: meta?.matterId ?? get().activeMatterId,
+      preselectedMatterClient: meta?.matterClient ?? get().preselectedMatterClient,
     }),
 
-  closeModal: () => set({ activeModal: null }),
+  closeModal: () => set({ activeModal: null, preselectedMatterClient: null }),
+
+  setPreselectedMatterClient: (client) => set({ preselectedMatterClient: client }),
 
   markAllRead: () => {
     set({ notificationsRead: true });

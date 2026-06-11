@@ -181,6 +181,8 @@ export function Modals() {
   const activeModal = useMockStore((s) => s.activeModal);
   const closeModal = useMockStore((s) => s.closeModal);
   const activeMatterId = useMockStore((s) => s.activeMatterId);
+  const preselectedMatterClient = useMockStore((s) => s.preselectedMatterClient);
+  const setPreselectedMatterClient = useMockStore((s) => s.setPreselectedMatterClient);
   const {
     acceptHandoff,
     saveProfile,
@@ -202,6 +204,7 @@ export function Modals() {
   const [groupName, setGroupName] = useState("");
   const [matterName, setMatterName] = useState("");
   const [matterClient, setMatterClient] = useState<PartySearchResult | null>(null);
+  const [matterClientLocked, setMatterClientLocked] = useState(false);
   const [matterType, setMatterType] = useState("New SMSF Setup");
   const [msgSubject, setMsgSubject] = useState("");
   const [msgBody, setMsgBody] = useState("");
@@ -209,6 +212,19 @@ export function Modals() {
   const [taskAssignee, setTaskAssignee] = useState("Emma Wilson");
   const [taskDue, setTaskDue] = useState("");
   const [uploadFile, setUploadFile] = useState("uploaded_document.pdf");
+
+  useEffect(() => {
+    if (activeModal === "new-matter" && preselectedMatterClient) {
+      setMatterClient(preselectedMatterClient);
+      setMatterClientLocked(true);
+      setPreselectedMatterClient(null);
+    }
+    if (activeModal !== "new-matter") {
+      setMatterClient(null);
+      setMatterName("");
+      setMatterClientLocked(false);
+    }
+  }, [activeModal, preselectedMatterClient, setPreselectedMatterClient]);
 
   return (
     <>
@@ -409,29 +425,49 @@ export function Modals() {
         }
       >
         <div className="space-y-3">
-          <div><Label>Matter name</Label><Input value={matterName} onChange={(e) => setMatterName(e.target.value)} placeholder="e.g. New SMSF Setup" /></div>
-          <div>
-            <Label>Client</Label>
-            {matterClient ? (
-              <div className="flex items-center justify-between rounded-brand-sm border border-brand-border bg-brand-surface px-3 py-2">
-                <div>
-                  <div className="text-[13px] font-medium">{matterClient.name}</div>
-                  {matterClient.detail && (
-                    <div className="text-[11px] text-brand-text-3">{matterClient.detail}</div>
-                  )}
-                </div>
-                <Button variant="outline" size="xs" onClick={() => setMatterClient(null)}>
-                  Change
-                </Button>
+          {matterClientLocked && matterClient ? (
+            <>
+              <div>
+                <div className="text-[13px] font-semibold text-brand-dark">{matterClient.name}</div>
+                {matterClient.detail && (
+                  <div className="text-[11px] text-brand-text-3">{matterClient.detail}</div>
+                )}
               </div>
-            ) : (
-              <PartySearchInput
-                type="TRUST"
-                placeholder="Search existing clients…"
-                onSelect={setMatterClient}
-              />
-            )}
-          </div>
+              <div>
+                <Label>Matter name</Label>
+                <Input value={matterName} onChange={(e) => setMatterName(e.target.value)} placeholder="e.g. New SMSF Setup" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <Label>Matter name</Label>
+                <Input value={matterName} onChange={(e) => setMatterName(e.target.value)} placeholder="e.g. New SMSF Setup" />
+              </div>
+              <div>
+                <Label>Client</Label>
+                {matterClient ? (
+                  <div className="flex items-center justify-between rounded-brand-sm border border-brand-border bg-brand-surface px-3 py-2">
+                    <div>
+                      <div className="text-[13px] font-medium">{matterClient.name}</div>
+                      {matterClient.detail && (
+                        <div className="text-[11px] text-brand-text-3">{matterClient.detail}</div>
+                      )}
+                    </div>
+                    <Button variant="outline" size="xs" onClick={() => setMatterClient(null)}>
+                      Change
+                    </Button>
+                  </div>
+                ) : (
+                  <PartySearchInput
+                    type="TRUST"
+                    placeholder="Search existing clients…"
+                    onSelect={setMatterClient}
+                  />
+                )}
+              </div>
+            </>
+          )}
           <div><Label>Matter type</Label>
             <Select value={matterType} onValueChange={setMatterType}>
               <SelectTrigger><SelectValue /></SelectTrigger>
