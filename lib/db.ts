@@ -10,10 +10,21 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
+  const connectionString = getDatabaseUrl();
+  const isRemote =
+    !connectionString.includes("localhost") &&
+    !connectionString.includes("127.0.0.1");
+
   const pool =
     globalForPrisma.pool ??
     new Pool({
-      connectionString: getDatabaseUrl(),
+      connectionString,
+      // Keep one warm connection so remote round-trips are not paid on every cold start.
+      min: 1,
+      max: 10,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+      ...(isRemote ? { ssl: { rejectUnauthorized: false } } : {}),
     });
 
   if (!globalForPrisma.pool) {
