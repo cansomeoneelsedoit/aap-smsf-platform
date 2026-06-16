@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PartyEditDialog } from "@/components/parties/party-edit-dialog";
+import { PartyEditDialog } from "@/app/(main)/parties/components/party-edit-dialog";
 import { mapPartyToEditable } from "@/lib/mappers";
 import { getPartyById } from "@/lib/queries/parties";
 

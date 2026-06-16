@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PartyEditForm, partyEditTitle } from "@/components/parties/party-edit-form";
+import { PartyEditForm, partyEditTitle } from "./party-edit-form";
 import type { EditableParty } from "@/lib/mappers";
 
 /** Intercepted-route dialog rendered in the (main) layout's @modal slot. */

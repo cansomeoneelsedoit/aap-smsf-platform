@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Logo } from "@/components/layout/logo";
+import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,9 +53,6 @@ export function OnboardingWizard() {
             </div>
           ))}
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/login">Staff login →</Link>
-        </Button>
       </header>
 
       <div className="mx-auto w-full max-w-[900px] flex-1 px-5 py-10">
@@ -186,11 +182,8 @@ export function OnboardingWizard() {
               <br />
               Emma Wilson has been notified and will accept your file shortly.
             </p>
-            <Button className="mr-2" onClick={() => router.push("/portal")}>
+            <Button onClick={() => router.push("/portal")}>
               Go to my portal →
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/login">Staff login</Link>
             </Button>
           </div>
         )}

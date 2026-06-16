@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAppSession } from "@/lib/auth";
-import { StaffShell } from "@/components/layout/staff-shell";
+import { StaffShell } from "./layout-shell";
 
 export default async function MainLayout({
   children,

@@ -1,4 +1,4 @@
-import { QueueList } from "@/components/queues/queue-list";
+import { QueueList } from "../components/queue-list";
 import { getMattersByStage } from "@/lib/queries/matters";
 
 export default async function CompliancePage() {

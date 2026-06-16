@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MatterContactsCard } from "@/components/matters/matter-contacts";
+import { MatterContactsCard } from "./matter-contacts";
 import { useMockStore, useMatterActions } from "@/hooks/use-mock-store";
 import { STAGE_COLORS, STAGE_INITIALS, STAGE_OWNER_MAP, STAGES } from "@/lib/mock-data";
 import type { FileNote, MatterContacts, MatterSummary, Task } from "@/lib/types";

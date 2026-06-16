@@ -1,5 +1,5 @@
 import { getStaffProfiles, getStageAssignments } from "@/lib/queries/matters";
-import { UsersPageClient } from "@/components/users/users-page-client";
+import { UsersPageClient } from "./components/users-page-client";
 
 export default async function UsersPage() {
   const [staff, assignments] = await Promise.all([

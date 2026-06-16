@@ -1,7 +1,7 @@
 "use client";
 
 import { Toaster } from "sonner";
-import { Modals } from "@/components/modals/modals";
+import { Modals } from "@/app/(main)/components/modals";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

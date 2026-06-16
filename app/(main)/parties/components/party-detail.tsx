@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdviserGroupBadge } from "@/components/brand/adviser-group-badge";
 import { StagePill } from "@/components/brand/stage-pill";
-import { CardEditButton } from "@/components/parties/card-edit-button";
-import { PartyTrusteesCard } from "@/components/parties/party-trustees-card";
+import { CardEditButton } from "./card-edit-button";
+import { PartyTrusteesCard } from "./party-trustees-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {

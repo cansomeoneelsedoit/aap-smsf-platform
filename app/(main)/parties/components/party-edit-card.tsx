@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PartyEditForm, partyEditTitle } from "@/components/parties/party-edit-form";
+import { PartyEditForm, partyEditTitle } from "./party-edit-form";
 import type { EditableParty } from "@/lib/mappers";
 
 /** Full-page fallback for direct loads of /matters/[matterId]/party/[partyId]. */

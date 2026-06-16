@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/layout/logo";
+import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
@@ -120,12 +119,6 @@ export function PortalLoginForm({ showDemoAccounts }: PortalLoginFormProps) {
         >
           {loading ? "Signing in…" : "Sign in →"}
         </Button>
-        <Link
-          href="/login"
-          className="mt-3 block w-full text-center text-xs text-brand-text-3 hover:text-brand-dark"
-        >
-          ← Staff login
-        </Link>
       </div>
     </div>
   );

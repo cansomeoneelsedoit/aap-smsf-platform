@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Logo } from "@/components/layout/logo";
+import { Logo } from "@/components/logo";
 import { StagePill } from "@/components/brand/stage-pill";
 import { signOut } from "@/lib/auth-client";
 import type { Session } from "@/lib/auth";
@@ -93,13 +93,10 @@ export function PortalShell({
           })}
         </nav>
         <div className="border-t border-brand-border p-4">
-          <Link href="/login" className="text-xs text-brand-text-3 hover:text-brand-dark">
-            ← Staff login
-          </Link>
           <button
             type="button"
             onClick={handleSignOut}
-            className="mt-2 block w-full text-left text-xs text-brand-text-3 hover:text-brand-dark"
+            className="block w-full text-left text-xs text-brand-text-3 hover:text-brand-dark"
           >
             Sign out
           </button>

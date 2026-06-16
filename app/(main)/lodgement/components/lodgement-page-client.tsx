@@ -1,6 +1,6 @@
 "use client";
 
-import { QueueList } from "@/components/queues/queue-list";
+import { QueueList } from "../../components/queue-list";
 import { useMatterActions } from "@/hooks/use-mock-store";
 import type { MatterSummary } from "@/lib/types";
 

@@ -1,4 +1,4 @@
-import { ClientCreateForm } from "@/components/clients/client-create-form";
+import { ClientCreateForm } from "./components/client-create-form";
 import { prisma } from "@/lib/db";
 
 export default async function PartyCreatePage() {

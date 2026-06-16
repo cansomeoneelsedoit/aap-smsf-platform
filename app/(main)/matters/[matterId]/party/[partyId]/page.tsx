@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PartyEditCard } from "@/components/parties/party-edit-card";
+import { PartyEditCard } from "@/app/(main)/parties/components/party-edit-card";
 import { mapPartyToEditable } from "@/lib/mappers";
 import { getPartyById } from "@/lib/queries/parties";
 

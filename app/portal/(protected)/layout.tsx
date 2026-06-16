@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAppSession } from "@/lib/auth";
-import { PortalShell } from "@/components/layout/portal-shell";
+import { PortalShell } from "./layout-shell";
 import { getClientPortalMatter } from "@/lib/queries/matters";
 
 export default async function ProtectedPortalLayout({

@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PartySearchInput } from "@/components/parties/party-search-input";
+import { PartySearchInput } from "@/app/(main)/parties/components/party-search-input";
 import { useMockStore, useMatterActions } from "@/hooks/use-mock-store";
 import type { PartySearchResult } from "@/lib/types";
 import { cn } from "@/lib/utils";

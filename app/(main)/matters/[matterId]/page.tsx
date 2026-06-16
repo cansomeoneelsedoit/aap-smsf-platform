@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { MatterDetail } from "@/components/matters/matter-detail";
+import { MatterDetail } from "../components/matter-detail";
 import {
   getMatterByDisplayId,
   getMatterFileNotes,

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PartyDetail } from "@/components/parties/party-detail";
+import { PartyDetail } from "../components/party-detail";
 import { getClientPartyDetail } from "@/lib/queries/parties";
 
 export default async function PartyDetailPage({
