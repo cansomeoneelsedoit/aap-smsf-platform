@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { MatterDetail } from "../components/matter-detail";
+import { getAppSession } from "@/lib/auth";
 import {
   getMatterByDisplayId,
   getMatterFileNotes,
@@ -20,6 +21,7 @@ export default async function MatterDetailPage({
   params: Promise<{ matterId: string }>;
 }) {
   const { matterId } = await params;
+  const session = await getAppSession();
   const matter = await getMatterByDisplayId(matterId);
 
   if (!matter) {
@@ -29,7 +31,9 @@ export default async function MatterDetailPage({
   const [tasks, fileNotes, documents] = await Promise.all([
     getMatterTasks(matter.id),
     getMatterFileNotes(matter.id),
-    getMatterDocumentsFromSharePoint(matterId),
+    session?.user
+      ? getMatterDocumentsFromSharePoint(matterId, session.user.id)
+      : Promise.resolve([]),
   ]);
 
   return (

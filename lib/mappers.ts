@@ -14,6 +14,7 @@ import type {
 import type { MatterDocumentItem } from "@/lib/microsoft-graph/sharepoint";
 import type {
   Organisation as DbOrganisation,
+  OrganisationMicrosoftIntegration,
   Matter,
   Party,
   PersonDetails,
@@ -144,6 +145,9 @@ export type ClientPartyListItem = Party & {
 };
 
 export type ClientPartyDetail = ClientParty & {
+  organisation:
+    | (DbOrganisation & { microsoftIntegration: OrganisationMicrosoftIntegration | null })
+    | null;
   matters: (Matter & { owner: (User & { staffProfile: StaffProfile | null }) | null })[];
 };
 
@@ -154,6 +158,11 @@ export interface ClientPartyDetailUi {
   organisation: string;
   organisationId: string | null;
   cbClass: string;
+  organisationHasSharePoint: boolean;
+  sharepointConfigured: boolean;
+  sharepointDriveId: string | null;
+  sharepointFolderId: string | null;
+  sharepointFolderPath: string | null;
   contacts: MatterContacts;
   currentMatters: ClientMatterSummary[];
   previousMatters: ClientMatterSummary[];
@@ -189,6 +198,14 @@ export function mapClientPartyWithMatters(party: ClientPartyDetail): ClientParty
     organisation: party.organisation?.name ?? "—",
     organisationId: party.organisationId,
     cbClass: party.organisation?.cbClass ?? "cb-other",
+    organisationHasSharePoint: Boolean(
+      party.organisation?.microsoftIntegration?.microsoftTenantId &&
+        party.organisation?.microsoftIntegration?.sharepointSiteId
+    ),
+    sharepointConfigured: Boolean(party.sharepointDriveId && party.sharepointFolderId),
+    sharepointDriveId: party.sharepointDriveId,
+    sharepointFolderId: party.sharepointFolderId,
+    sharepointFolderPath: party.sharepointFolderPath,
     contacts: mapMatterContacts(party),
     currentMatters: matters.filter((m) => m.stage !== "Active"),
     previousMatters: matters.filter((m) => m.stage === "Active"),

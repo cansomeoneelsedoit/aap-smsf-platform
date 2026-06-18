@@ -31,7 +31,9 @@ import {
   createClientAction,
   type NewPersonInput,
   type PersonRef,
+  type SharePointDestinationInput,
 } from "@/lib/actions/client-actions";
+import { SharePointFolderPicker } from "@/components/sharepoint/sharepoint-folder-picker";
 
 const MAX_PERSONS = 4;
 
@@ -222,11 +224,13 @@ function PersonPicker({
 export function ClientCreateForm({
   groups,
 }: {
-  groups: { id: string; name: string }[];
+  groups: { id: string; name: string; hasSharePoint: boolean }[];
 }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [organisationId, setOrganisationId] = useState("");
+  const [sharepointDestination, setSharepointDestination] =
+    useState<SharePointDestinationInput | null>(null);
   const [corporate, setCorporate] = useState(false);
   const [trustees, setTrustees] = useState<SelectedPerson[]>([]);
   const [company, setCompany] = useState<SelectedCompany | null>(null);
@@ -234,9 +238,15 @@ export function ClientCreateForm({
   const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const selectedOrganisation = groups.find((group) => group.id === organisationId);
+  const requiresSharePoint = selectedOrganisation?.hasSharePoint ?? false;
+
   const handleSubmit = async () => {
     if (!name.trim()) return toast.error("Client name is required");
     if (!organisationId) return toast.error("Please select an organisation");
+    if (requiresSharePoint && !sharepointDestination) {
+      return toast.error("Select a SharePoint destination folder for this client");
+    }
     if (!corporate && trustees.length === 0)
       return toast.error("Add at least one individual trustee");
     if (corporate && !company) return toast.error("Add a corporate trustee");
@@ -259,6 +269,7 @@ export function ClientCreateForm({
               directors: directors.map(toPersonRef),
             }
           : undefined,
+        sharepointDestination: sharepointDestination ?? undefined,
       });
 
       if ("error" in result && result.error) {
@@ -294,7 +305,13 @@ export function ClientCreateForm({
           </div>
           <div>
             <Label>Organisation</Label>
-            <Select value={organisationId} onValueChange={setOrganisationId}>
+            <Select
+              value={organisationId}
+              onValueChange={(value) => {
+                setOrganisationId(value);
+                setSharepointDestination(null);
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select organisation…" />
               </SelectTrigger>
@@ -305,6 +322,14 @@ export function ClientCreateForm({
               </SelectContent>
             </Select>
           </div>
+          {requiresSharePoint && (
+            <SharePointFolderPicker
+              organisationId={organisationId}
+              value={sharepointDestination}
+              onChange={setSharepointDestination}
+              disabled={submitting}
+            />
+          )}
         </CardContent>
       </Card>
 

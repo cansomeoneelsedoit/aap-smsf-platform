@@ -8,6 +8,7 @@ import { OrganisationBadge } from "@/components/brand/organisation-badge";
 import { StagePill } from "@/components/brand/stage-pill";
 import { CardEditButton } from "./card-edit-button";
 import { PartyTrusteesCard } from "./party-trustees-card";
+import { ClientSharePointCard } from "./client-sharepoint-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -207,6 +208,19 @@ export function PartyDetail({ client }: { client: ClientPartyDetailUi }) {
       <div className="mb-6 grid gap-4 lg:grid-cols-2">
         <ClientDetailsCard clientId={client.id} name={client.name} abn={client.abn} />
         <PartyTrusteesCard clientPartyId={client.id} contacts={client.contacts} />
+        {client.organisationHasSharePoint && (
+          <div className="lg:col-span-2">
+            <ClientSharePointCard
+              clientId={client.id}
+              clientName={client.name}
+              organisationId={client.organisationId!}
+              sharepointConfigured={client.sharepointConfigured}
+              sharepointDriveId={client.sharepointDriveId}
+              sharepointFolderId={client.sharepointFolderId}
+              sharepointFolderPath={client.sharepointFolderPath}
+            />
+          </div>
+        )}
       </div>
 
       <div className="mb-4 flex items-center justify-between">

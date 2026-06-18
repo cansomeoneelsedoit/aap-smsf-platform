@@ -152,6 +152,9 @@ model Party {
   name           String
   organisationId String?
   organisation   Organisation? @relation(fields: [organisationId], references: [id])
+  sharepointDriveId  String? @map("sharepoint_drive_id")
+  sharepointFolderId String? @map("sharepoint_folder_id")
+  sharepointFolderPath String? @map("sharepoint_folder_path")
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 

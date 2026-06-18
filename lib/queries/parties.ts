@@ -45,7 +45,9 @@ export async function getClientPartySummaries() {
 }
 
 const clientDetailInclude = {
-  organisation: true,
+  organisation: {
+    include: { microsoftIntegration: true },
+  },
   trust: true,
   matters: {
     include: { owner: { include: { staffProfile: true } } },

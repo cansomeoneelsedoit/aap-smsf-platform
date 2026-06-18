@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { MAX_UPLOAD_BYTES } from "@/lib/microsoft-graph/constants";
+import { getUserGraphAccessToken } from "@/lib/microsoft-graph/auth-user";
 import {
+  isMicrosoftGraphAuthError,
   isMicrosoftGraphConfigError,
   isMicrosoftGraphError,
 } from "@/lib/microsoft-graph/errors";
@@ -72,13 +74,16 @@ export async function uploadDocumentAction(
     const context = await getMatterSharePointContext(matterDisplayId);
     if (!context) {
       return {
-        error: "SharePoint is not configured for this matter's organisation",
+        error:
+          "SharePoint is not configured for this client — set a destination folder when creating the client",
       };
     }
 
+    const accessToken = await getUserGraphAccessToken(session.user.id);
     const content = await file.arrayBuffer();
 
     await uploadMatterDocument(
+      accessToken,
       context.config,
       context.matterDisplayId,
       financialYear.trim(),
@@ -99,6 +104,9 @@ export async function uploadDocumentAction(
 
     return { success: true };
   } catch (error) {
+    if (isMicrosoftGraphAuthError(error)) {
+      return { error: error.message };
+    }
     if (isMicrosoftGraphConfigError(error)) {
       return { error: error.message };
     }

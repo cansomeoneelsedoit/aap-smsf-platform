@@ -19,6 +19,10 @@ export class MicrosoftGraphError extends Error {
   }
 }
 
+export function isMicrosoftGraphAuthError(error: unknown): error is MicrosoftGraphAuthError {
+  return error instanceof Error && error.name === "MicrosoftGraphAuthError";
+}
+
 export function isMicrosoftGraphError(error: unknown): error is MicrosoftGraphError {
   return error instanceof Error && error.name === "MicrosoftGraphError";
 }

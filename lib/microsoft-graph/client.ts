@@ -1,5 +1,3 @@
-import { getAccessToken } from "./auth";
-
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
 export function encodeDrivePath(...segments: string[]): string {
@@ -9,17 +7,16 @@ export function encodeDrivePath(...segments: string[]): string {
 }
 
 export async function graphFetch(
-  tenantId: string,
+  accessToken: string,
   path: string,
   init?: RequestInit
 ): Promise<Response> {
-  const token = await getAccessToken(tenantId);
   const url = path.startsWith("http") ? path : `${GRAPH_BASE}${path}`;
 
   return fetch(url, {
     ...init,
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessToken}`,
       ...init?.headers,
     },
   });

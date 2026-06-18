@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/db";
+import { getUserGraphAccessToken } from "@/lib/microsoft-graph/auth-user";
 import {
   listMatterDocuments,
-  type SharePointIntegrationConfig,
+  type SharePointDestinationConfig,
 } from "@/lib/microsoft-graph/sharepoint";
 import {
+  isMicrosoftGraphAuthError,
   isMicrosoftGraphConfigError,
   isMicrosoftGraphError,
 } from "@/lib/microsoft-graph/errors";
@@ -11,7 +13,7 @@ import {
 export interface MatterSharePointContext {
   matterId: string;
   matterDisplayId: string;
-  config: SharePointIntegrationConfig;
+  config: SharePointDestinationConfig;
 }
 
 export async function getMatterSharePointContext(
@@ -35,10 +37,12 @@ export async function getMatterSharePointContext(
   }
 
   const integration = matter.client.organisation?.microsoftIntegration;
+  const client = matter.client;
+
   if (
     !integration?.microsoftTenantId ||
-    !integration.sharepointSiteId ||
-    !integration.sharepointDriveId
+    !client.sharepointDriveId ||
+    !client.sharepointFolderId
   ) {
     return null;
   }
@@ -48,22 +52,30 @@ export async function getMatterSharePointContext(
     matterDisplayId: matter.displayId,
     config: {
       microsoftTenantId: integration.microsoftTenantId.trim(),
-      sharepointSiteId: integration.sharepointSiteId.trim(),
-      sharepointDriveId: integration.sharepointDriveId.trim(),
+      sharepointDriveId: client.sharepointDriveId.trim(),
+      sharepointFolderId: client.sharepointFolderId.trim(),
     },
   };
 }
 
-export async function getMatterDocumentsFromSharePoint(matterDisplayId: string) {
+export async function getMatterDocumentsFromSharePoint(
+  matterDisplayId: string,
+  userId: string
+) {
   try {
     const context = await getMatterSharePointContext(matterDisplayId);
     if (!context) {
       return [];
     }
 
-    return listMatterDocuments(context.config, context.matterDisplayId);
+    const accessToken = await getUserGraphAccessToken(userId);
+    return listMatterDocuments(accessToken, context.config, context.matterDisplayId);
   } catch (error) {
-    if (isMicrosoftGraphConfigError(error) || isMicrosoftGraphError(error)) {
+    if (
+      isMicrosoftGraphConfigError(error) ||
+      isMicrosoftGraphError(error) ||
+      isMicrosoftGraphAuthError(error)
+    ) {
       console.error("Failed to load matter documents from SharePoint:", error);
       return [];
     }

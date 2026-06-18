@@ -5,7 +5,11 @@ const GRAPH_SCOPE = "https://graph.microsoft.com/.default";
 
 const tokenCache = new Map<string, { token: string; expiresAt: number }>();
 
-export async function getAccessToken(tenantId: string): Promise<string> {
+/**
+ * Application (client credentials) token. Retained for transitional use only —
+ * SharePoint operations should use delegated user tokens via auth-user.ts.
+ */
+export async function getAppAccessToken(tenantId: string): Promise<string> {
   const cached = tokenCache.get(tenantId);
   if (cached && cached.expiresAt > Date.now() + 60_000) {
     return cached.token;
@@ -28,7 +32,7 @@ export async function getAccessToken(tenantId: string): Promise<string> {
   );
 
   if (!response.ok) {
-    throw new MicrosoftGraphAuthError("Failed to obtain Microsoft Graph access token");
+    throw new MicrosoftGraphAuthError("Failed to obtain Microsoft Graph application token");
   }
 
   const data = (await response.json()) as { access_token: string; expires_in: number };

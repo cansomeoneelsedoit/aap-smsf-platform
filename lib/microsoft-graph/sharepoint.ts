@@ -1,16 +1,18 @@
 import { encodeDrivePath, graphFetch } from "./client";
 import { MicrosoftGraphError } from "./errors";
 
-export interface SharePointIntegrationConfig {
+export interface SharePointDestinationConfig {
   microsoftTenantId: string;
-  sharepointSiteId: string;
   sharepointDriveId: string;
+  /** Drive item ID of the client root folder selected at client creation. */
+  sharepointFolderId: string;
 }
 
 interface DriveItem {
   id: string;
   name: string;
   webUrl: string;
+  driveType?: string;
   size?: number;
   lastModifiedDateTime?: string;
   folder?: Record<string, never>;
@@ -19,6 +21,13 @@ interface DriveItem {
 
 interface DriveItemListResponse {
   value: DriveItem[];
+}
+
+export interface SharePointBrowseItem {
+  id: string;
+  name: string;
+  webUrl: string;
+  isFolder: boolean;
 }
 
 export interface UploadedDocument {
@@ -43,20 +52,31 @@ interface GraphErrorBody {
   };
 }
 
-function buildDrivePath(config: SharePointIntegrationConfig): string {
-  return `/drives/${config.sharepointDriveId.trim()}`;
+function buildDrivePath(driveId: string): string {
+  return `/drives/${driveId.trim()}`;
 }
 
-function buildDriveItemPath(config: SharePointIntegrationConfig, itemPath: string): string {
-  return `${buildDrivePath(config)}/root:/${itemPath}:`;
+function normalizeFolderId(folderId: string, driveId: string): "root" | string {
+  if (folderId === "root" || folderId === driveId) {
+    return "root";
+  }
+  return folderId;
 }
 
-function buildItemUploadPath(
-  config: SharePointIntegrationConfig,
-  folderId: string,
-  fileName: string
-): string {
-  return `${buildDrivePath(config)}/items/${folderId}:/${encodeDrivePath(fileName)}:/content`;
+function buildChildrenUrl(driveId: string, parentId: "root" | string): string {
+  return parentId === "root"
+    ? `${buildDrivePath(driveId)}/root/children`
+    : `${buildDrivePath(driveId)}/items/${parentId}/children`;
+}
+
+function buildItemPathUrl(driveId: string, parentId: "root" | string, itemPath: string): string {
+  return parentId === "root"
+    ? `${buildDrivePath(driveId)}/root:/${itemPath}:`
+    : `${buildDrivePath(driveId)}/items/${parentId}:/${itemPath}:`;
+}
+
+function buildItemUploadPath(driveId: string, folderId: string, fileName: string): string {
+  return `${buildDrivePath(driveId)}/items/${folderId}:/${encodeDrivePath(fileName)}:/content`;
 }
 
 function formatGraphErrorMessage(fallback: string, body: GraphErrorBody | null): string {
@@ -76,22 +96,30 @@ function formatGraphErrorMessage(fallback: string, body: GraphErrorBody | null):
 
 function permissionDeniedMessage(): string {
   return (
-    "SharePoint access denied. The Azure app needs Microsoft Graph application permissions " +
-    "(e.g. Sites.ReadWrite.All) with admin consent granted. Delegated permissions are not " +
-    "sufficient for server-side uploads."
+    "SharePoint access denied. Ensure the Azure app has the Files.ReadWrite delegated permission " +
+    "with admin consent granted, then sign out and sign in with Microsoft again."
+  );
+}
+
+function folderWriteDeniedMessage(folderName: string): string {
+  return (
+    `Cannot create folder "${folderName}" in SharePoint. Your Microsoft account may lack write ` +
+    "permission on this folder, or the app may need the Files.ReadWrite delegated permission " +
+    "with admin consent — sign out and sign in with Microsoft after permissions are updated."
   );
 }
 
 async function listFolderChildren(
-  config: SharePointIntegrationConfig,
+  accessToken: string,
+  driveId: string,
   parentId: "root" | string
 ): Promise<DriveItem[]> {
   const url =
     parentId === "root"
-      ? `${buildDrivePath(config)}/root/children`
-      : `${buildDrivePath(config)}/items/${parentId}/children`;
+      ? `${buildDrivePath(driveId)}/root/children`
+      : `${buildDrivePath(driveId)}/items/${parentId}/children`;
 
-  const response = await graphFetch(config.microsoftTenantId, url);
+  const response = await graphFetch(accessToken, url);
 
   if (!response.ok) {
     await throwGraphError(response, "Failed to list folder contents");
@@ -102,22 +130,18 @@ async function listFolderChildren(
 }
 
 async function getOrCreateChildFolder(
-  config: SharePointIntegrationConfig,
+  accessToken: string,
+  driveId: string,
   parentId: "root" | string,
   folderName: string
 ): Promise<string> {
-  const children = await listFolderChildren(config, parentId);
+  const children = await listFolderChildren(accessToken, driveId, parentId);
   const existing = children.find((item) => item.folder && item.name === folderName);
   if (existing) {
     return existing.id;
   }
 
-  const createUrl =
-    parentId === "root"
-      ? `${buildDrivePath(config)}/root/children`
-      : `${buildDrivePath(config)}/items/${parentId}/children`;
-
-  const response = await graphFetch(config.microsoftTenantId, createUrl, {
+  const response = await graphFetch(accessToken, buildChildrenUrl(driveId, parentId), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -135,8 +159,12 @@ async function getOrCreateChildFolder(
   const body = await readGraphErrorBody(response);
   const code = body?.error?.code?.toLowerCase();
 
+  if (response.status === 401 || response.status === 403) {
+    throw new MicrosoftGraphError(folderWriteDeniedMessage(folderName));
+  }
+
   if (response.status === 409 || code === "namealreadyexists") {
-    const retryChildren = await listFolderChildren(config, parentId);
+    const retryChildren = await listFolderChildren(accessToken, driveId, parentId);
     const retryExisting = retryChildren.find((item) => item.folder && item.name === folderName);
     if (retryExisting) {
       return retryExisting.id;
@@ -152,13 +180,15 @@ async function getOrCreateChildFolder(
 }
 
 async function ensureFolderPath(
-  config: SharePointIntegrationConfig,
+  accessToken: string,
+  driveId: string,
+  parentFolderId: string,
   segments: string[]
 ): Promise<string> {
-  let parentId: "root" | string = "root";
+  let parentId = normalizeFolderId(parentFolderId, driveId);
 
   for (const segment of segments) {
-    parentId = await getOrCreateChildFolder(config, parentId, segment);
+    parentId = await getOrCreateChildFolder(accessToken, driveId, parentId, segment);
   }
 
   return parentId;
@@ -200,8 +230,18 @@ async function throwGraphError(response: Response, fallback: string): Promise<ne
   throw new MicrosoftGraphError(formatGraphErrorMessage(fallback, body));
 }
 
-async function assertDriveAccess(config: SharePointIntegrationConfig): Promise<void> {
-  const response = await graphFetch(config.microsoftTenantId, buildDrivePath(config));
+async function assertFolderAccess(
+  accessToken: string,
+  driveId: string,
+  folderId: string
+): Promise<void> {
+  const normalizedFolderId = normalizeFolderId(folderId, driveId);
+  const url =
+    normalizedFolderId === "root"
+      ? `${buildDrivePath(driveId)}/root`
+      : `${buildDrivePath(driveId)}/items/${normalizedFolderId}`;
+
+  const response = await graphFetch(accessToken, url);
 
   if (response.ok) {
     return;
@@ -211,16 +251,19 @@ async function assertDriveAccess(config: SharePointIntegrationConfig): Promise<v
     throw new MicrosoftGraphError(permissionDeniedMessage());
   }
 
-  await throwGraphError(response, "Cannot access SharePoint drive — check the drive ID");
+  await throwGraphError(response, "Cannot access SharePoint folder — check the folder ID");
 }
 
 async function getDriveItemByPath(
-  config: SharePointIntegrationConfig,
+  accessToken: string,
+  driveId: string,
+  parentFolderId: string,
   itemPath: string
 ): Promise<DriveItem | null> {
+  const parentId = normalizeFolderId(parentFolderId, driveId);
   const response = await graphFetch(
-    config.microsoftTenantId,
-    buildDriveItemPath(config, itemPath)
+    accessToken,
+    buildItemPathUrl(driveId, parentId, encodeDrivePath(itemPath))
   );
 
   if (response.ok) {
@@ -238,27 +281,120 @@ async function getDriveItemByPath(
   );
 }
 
-async function listDriveItemChildren(
-  config: SharePointIntegrationConfig,
-  itemId: string
-): Promise<DriveItem[]> {
-  return listFolderChildren(config, itemId);
+export async function getSharePointSite(
+  accessToken: string,
+  siteId: string
+): Promise<{ id: string; name: string; webUrl: string }> {
+  const response = await graphFetch(
+    accessToken,
+    `/sites/${encodeURIComponent(siteId)}?$select=displayName,webUrl`
+  );
+
+  if (!response.ok) {
+    await throwGraphError(response, "Failed to load SharePoint site");
+  }
+
+  const site = (await response.json()) as { id: string; displayName: string; webUrl: string };
+  return { id: site.id, name: site.displayName, webUrl: site.webUrl };
+}
+
+export async function listSharePointSiteDrives(
+  accessToken: string,
+  siteId: string
+): Promise<SharePointBrowseItem[]> {
+  const response = await graphFetch(accessToken, `/sites/${encodeURIComponent(siteId)}/drives`);
+
+  if (!response.ok) {
+    await throwGraphError(response, "Failed to list SharePoint document libraries");
+  }
+
+  const data = (await response.json()) as { value: DriveItem[] };
+  return data.value
+    .filter((drive) => drive.driveType === "documentLibrary")
+    .map((drive) => ({
+      id: drive.id,
+      name: drive.name,
+      webUrl: drive.webUrl,
+      isFolder: true,
+    }));
+}
+
+/** @deprecated Use listSharePointSiteDrives with an organisation site ID */
+export async function listSharePointDrives(accessToken: string): Promise<SharePointBrowseItem[]> {
+  const response = await graphFetch(accessToken, "/me/drives");
+
+  if (!response.ok) {
+    await throwGraphError(response, "Failed to list SharePoint drives");
+  }
+
+  const data = (await response.json()) as { value: DriveItem[] };
+  return data.value.map((drive) => ({
+    id: drive.id,
+    name: drive.name,
+    webUrl: drive.webUrl,
+    isFolder: true,
+  }));
+}
+
+export async function listSharePointFolderChildren(
+  accessToken: string,
+  driveId: string,
+  folderId: "root" | string
+): Promise<SharePointBrowseItem[]> {
+  const children = await listFolderChildren(accessToken, driveId, folderId);
+
+  return children
+    .filter((item) => item.folder)
+    .map((item) => ({
+      id: item.id,
+      name: item.name,
+      webUrl: item.webUrl,
+      isFolder: true,
+    }));
+}
+
+export async function getSharePointFolderDetails(
+  accessToken: string,
+  driveId: string,
+  folderId: string
+): Promise<{ id: string; name: string; webUrl: string }> {
+  const normalizedFolderId = normalizeFolderId(folderId, driveId);
+  const url =
+    normalizedFolderId === "root"
+      ? `${buildDrivePath(driveId)}/root`
+      : `${buildDrivePath(driveId)}/items/${normalizedFolderId}`;
+
+  const response = await graphFetch(accessToken, url);
+
+  if (!response.ok) {
+    await throwGraphError(response, "Failed to load SharePoint folder");
+  }
+
+  const item = (await response.json()) as DriveItem;
+  return { id: item.id, name: item.name, webUrl: item.webUrl };
 }
 
 export async function uploadMatterDocument(
-  config: SharePointIntegrationConfig,
+  accessToken: string,
+  config: SharePointDestinationConfig,
   matterDisplayId: string,
   financialYear: string,
   fileName: string,
   content: ArrayBuffer,
   contentType: string
 ): Promise<UploadedDocument> {
-  await assertDriveAccess(config);
+  await assertFolderAccess(accessToken, config.sharepointDriveId, config.sharepointFolderId);
 
-  const folderId = await ensureFolderPath(config, [matterDisplayId, financialYear]);
+  const folderId = await ensureFolderPath(
+    accessToken,
+    config.sharepointDriveId,
+    config.sharepointFolderId,
+    [matterDisplayId, financialYear]
+  );
+
   const response = await graphFetch(
-    config.microsoftTenantId,
-    buildItemUploadPath(config, folderId, fileName),
+    accessToken,
+    buildItemUploadPath(config.sharepointDriveId, folderId, fileName),
     {
       method: "PUT",
       headers: { "Content-Type": contentType || "application/octet-stream" },
@@ -275,16 +411,26 @@ export async function uploadMatterDocument(
 }
 
 export async function listMatterDocuments(
-  config: SharePointIntegrationConfig,
+  accessToken: string,
+  config: SharePointDestinationConfig,
   matterDisplayId: string
 ): Promise<MatterDocumentItem[]> {
   try {
-    const matterFolder = await getDriveItemByPath(config, encodeDrivePath(matterDisplayId));
+    const matterFolder = await getDriveItemByPath(
+      accessToken,
+      config.sharepointDriveId,
+      config.sharepointFolderId,
+      encodeDrivePath(matterDisplayId)
+    );
     if (!matterFolder) {
       return [];
     }
 
-    const fyFolders = await listDriveItemChildren(config, matterFolder.id);
+    const fyFolders = await listFolderChildren(
+      accessToken,
+      config.sharepointDriveId,
+      matterFolder.id
+    );
     const documents: MatterDocumentItem[] = [];
 
     for (const item of fyFolders) {
@@ -292,7 +438,7 @@ export async function listMatterDocuments(
         continue;
       }
 
-      const files = await listDriveItemChildren(config, item.id);
+      const files = await listFolderChildren(accessToken, config.sharepointDriveId, item.id);
 
       for (const file of files) {
         if (!file.file) {
@@ -318,3 +464,6 @@ export async function listMatterDocuments(
     return [];
   }
 }
+
+/** @deprecated Use SharePointDestinationConfig */
+export type SharePointIntegrationConfig = SharePointDestinationConfig;

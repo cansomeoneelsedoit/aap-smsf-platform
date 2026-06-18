@@ -6,6 +6,7 @@ import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/db";
 import { getBetterAuthSecret, getBetterAuthUrl, getTrustedOrigins } from "@/lib/env";
 import { getMicrosoftAuthConfig } from "@/lib/microsoft-auth-config";
+import { MICROSOFT_GRAPH_DELEGATED_SCOPES } from "@/lib/microsoft-graph/scopes";
 import {
   deriveStaffInitials,
   getDefaultStaffColor,
@@ -43,6 +44,7 @@ const authOptions = {
           tenantId: microsoftAuth.tenantId,
           prompt: "select_account" as const,
           disableProfilePhoto: true,
+          scope: [...MICROSOFT_GRAPH_DELEGATED_SCOPES],
           mapProfileToUser: mapMicrosoftProfileToStaffUser,
         },
       }

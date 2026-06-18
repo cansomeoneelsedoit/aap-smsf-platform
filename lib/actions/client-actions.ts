@@ -33,6 +33,12 @@ export interface PersonRef {
   newPerson?: NewPersonInput;
 }
 
+export interface SharePointDestinationInput {
+  driveId: string;
+  folderId: string;
+  folderPath: string;
+}
+
 export interface CreateClientInput {
   name: string;
   organisationId: string;
@@ -43,6 +49,7 @@ export interface CreateClientInput {
     newCompany?: NewCompanyInput;
     directors: PersonRef[];
   };
+  sharepointDestination?: SharePointDestinationInput;
 }
 
 async function resolvePersonParty(
@@ -76,6 +83,25 @@ export async function createClientAction(input: CreateClientInput) {
   if (!input.name.trim()) return { error: "Client name is required" };
   if (!input.organisationId) return { error: "Organisation is required" };
 
+  const organisation = await prisma.organisation.findUnique({
+    where: { id: input.organisationId },
+    include: { microsoftIntegration: true },
+  });
+  if (!organisation) return { error: "Organisation not found" };
+
+  const orgHasSharePoint = Boolean(
+    organisation.microsoftIntegration?.microsoftTenantId &&
+      organisation.microsoftIntegration?.sharepointSiteId
+  );
+  if (orgHasSharePoint) {
+    if (
+      !input.sharepointDestination?.driveId?.trim() ||
+      !input.sharepointDestination?.folderId?.trim()
+    ) {
+      return { error: "Select a SharePoint destination folder for this client" };
+    }
+  }
+
   if (input.trusteeType === "individual") {
     if (input.individualTrustees.length === 0) {
       return { error: "At least one individual trustee is required" };
@@ -93,6 +119,9 @@ export async function createClientAction(input: CreateClientInput) {
         type: "TRUST",
         name: input.name.trim(),
         organisationId: input.organisationId,
+        sharepointDriveId: input.sharepointDestination?.driveId?.trim() || null,
+        sharepointFolderId: input.sharepointDestination?.folderId?.trim() || null,
+        sharepointFolderPath: input.sharepointDestination?.folderPath?.trim() || null,
         trust: { create: {} },
       },
     });
@@ -385,4 +414,68 @@ function revalidatePartyPaths(partyId: string) {
   revalidatePath("/clients");
   revalidatePath(`/parties/${partyId}`);
   revalidatePath(`/clients/${partyId}`);
+}
+
+export async function updateClientSharePointDestinationAction(
+  clientPartyId: string,
+  destination: SharePointDestinationInput
+): Promise<{ success: true } | { error: string }> {
+  const session = await requireStaffSession();
+
+  const driveId = destination.driveId?.trim();
+  const folderId = destination.folderId?.trim();
+  const folderPath = destination.folderPath?.trim();
+
+  if (!driveId || !folderId || !folderPath) {
+    return { error: "Select a SharePoint destination folder" };
+  }
+
+  const client = await prisma.party.findUnique({
+    where: { id: clientPartyId, type: "TRUST" },
+    include: {
+      organisation: { include: { microsoftIntegration: true } },
+      matters: { select: { displayId: true } },
+    },
+  });
+
+  if (!client) {
+    return { error: "Client not found" };
+  }
+
+  if (!client.organisation?.microsoftIntegration?.microsoftTenantId) {
+    return { error: "SharePoint is not configured for this client's organisation" };
+  }
+
+  if (!client.organisation.microsoftIntegration.sharepointSiteId?.trim()) {
+    return {
+      error:
+        "SharePoint site ID is not configured for this organisation — set it in organisation settings",
+    };
+  }
+
+  await prisma.party.update({
+    where: { id: clientPartyId },
+    data: {
+      sharepointDriveId: driveId,
+      sharepointFolderId: folderId,
+      sharepointFolderPath: folderPath,
+    },
+  });
+
+  await prisma.auditEntry.create({
+    data: {
+      id: crypto.randomUUID(),
+      action: "CLIENT_SHAREPOINT_CONFIGURED",
+      detail: folderPath,
+      entity: client.name,
+      userId: session.user.id,
+    },
+  });
+
+  revalidatePartyPaths(clientPartyId);
+  for (const matter of client.matters) {
+    revalidatePath(`/matters/${matter.displayId}`);
+  }
+
+  return { success: true };
 }
