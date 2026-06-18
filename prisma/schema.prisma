@@ -119,8 +119,8 @@ model StaffProfile {
   hobbies  String?
 }
 
-/// The adviser/referral group whose clients we administer (e.g. AAP, Liberty).
-model AdviserGroup {
+/// The organisation whose clients we administer (e.g. AAP, Liberty).
+model Organisation {
   id           String  @id
   name         String
   description  String
@@ -131,6 +131,17 @@ model AdviserGroup {
   textColor    String
   cbClass      String
   clients      Party[]
+  microsoftIntegration OrganisationMicrosoftIntegration?
+}
+
+model OrganisationMicrosoftIntegration {
+  organisationId    String       @id
+  organisation      Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  microsoftTenantId String?      @map("microsoft_tenant_id")
+  sharepointSiteId  String?      @map("sharepoint_site_id")
+  sharepointDriveId String?      @map("sharepoint_drive_id")
+
+  @@map("organisation_microsoft_integrations")
 }
 
 /// Any legal person: an individual, a company, or a trust (an SMSF is a trust).
@@ -139,8 +150,8 @@ model Party {
   id             String        @id @default(cuid())
   type           PartyType
   name           String
-  adviserGroupId String?
-  adviserGroup   AdviserGroup? @relation(fields: [adviserGroupId], references: [id])
+  organisationId String?
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 

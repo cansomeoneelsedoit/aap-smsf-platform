@@ -12,6 +12,17 @@ type LoginFormProps = {
   showDemoAccounts: boolean;
 };
 
+function MicrosoftIcon() {
+  return (
+    <img
+      src="/logos/microsoft.png"
+      alt=""
+      aria-hidden
+      className="h-4 w-4"
+    />
+  );
+}
+
 export function LoginForm({ showDemoAccounts }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -20,9 +31,17 @@ export function LoginForm({ showDemoAccounts }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    authClient.getSession().then(({ data }) => {
-      if (data?.user?.accountType === "STAFF") {
+    authClient.getSession().then(async ({ data }) => {
+      if (!data?.user) return;
+
+      if (data.user.accountType === "STAFF") {
         router.replace("/dashboard");
+        return;
+      }
+
+      if (data.user.accountType === "CLIENT") {
+        await authClient.signOut();
+        setError("Please use the client portal to sign in.");
       }
     });
   }, [router]);
@@ -52,6 +71,21 @@ export function LoginForm({ showDemoAccounts }: LoginFormProps) {
     router.push("/dashboard");
   };
 
+  const handleMicrosoftSignIn = async () => {
+    setLoading(true);
+    setError("");
+
+    const result = await authClient.signIn.social({
+      provider: "microsoft",
+      callbackURL: "/login",
+    });
+
+    if (result.error) {
+      setError(result.error.message ?? "Microsoft sign in failed");
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = () => {
     const signInEmail =
       email || (showDemoAccounts ? DEMO_ACCOUNTS[0].email : "");
@@ -70,6 +104,25 @@ export function LoginForm({ showDemoAccounts }: LoginFormProps) {
         <p className="mb-5 text-[13px] text-brand-text-2">
           Administration platform — authorised staff only
         </p>
+
+        <Button
+          variant="outline"
+          className="mb-4 w-full justify-center gap-2"
+          disabled={loading}
+          onClick={handleMicrosoftSignIn}
+        >
+          <MicrosoftIcon />
+          {loading ? "Redirecting…" : "Sign in with Microsoft"}
+        </Button>
+
+        <div className="relative mb-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-brand-border" />
+          </div>
+          <div className="relative flex justify-center text-[11px] uppercase tracking-wide">
+            <span className="bg-white px-2 text-brand-text-3">or</span>
+          </div>
+        </div>
 
         {showDemoAccounts && (
           <div className="mb-4 rounded-brand-sm bg-brand-surface p-3">

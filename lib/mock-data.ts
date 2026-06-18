@@ -1,4 +1,4 @@
-import type { AdviserGroup, AuditEntry, FileNote, Stage, StaffSession, Task } from "@/lib/types";
+import type { Organisation, AuditEntry, FileNote, Stage, StaffSession, Task } from "@/lib/types";
 
 export const STAGES = ["Start", "Prepare", "Check", "Lodge", "Active"] as const;
 
@@ -31,21 +31,21 @@ export interface SeedMatter {
   matterName: string;
   clientName: string;
   abn: string | null;
-  adviserGroupId: string;
+  organisationId: string;
   type: string;
   stage: Stage;
   due: string;
 }
 
 export const SEED_MATTERS: SeedMatter[] = [
-  { id: "M001", matterName: "New SMSF Setup", clientName: "Smith Family Superannuation Fund", abn: "12 345 678 901", adviserGroupId: "liberty", type: "New SMSF", stage: "Check", due: "22 Mar" },
-  { id: "M002", matterName: "Existing SMSF Onboarding", clientName: "Johnson Retirement Fund", abn: "45 678 901 234", adviserGroupId: "clime", type: "Existing", stage: "Prepare", due: "25 Mar" },
-  { id: "M003", matterName: "Corporate Trustee Conversion", clientName: "Williams Super Fund", abn: "23 456 789 012", adviserGroupId: "aap", type: "Corp Trustee", stage: "Lodge", due: "28 Mar" },
-  { id: "M004", matterName: "New SMSF Setup", clientName: "Brown Family Super", abn: null, adviserGroupId: "riverx", type: "New SMSF", stage: "Start", due: "30 Mar" },
-  { id: "M005", matterName: "Annual Compliance", clientName: "Chen Investment Fund", abn: "34 567 890 123", adviserGroupId: "clime", type: "Compliance", stage: "Active", due: "—" },
-  { id: "M006", matterName: "New SMSF Setup", clientName: "Davis Investment Fund", abn: "78 901 234 567", adviserGroupId: "liberty", type: "New SMSF", stage: "Check", due: "24 Mar" },
-  { id: "M007", matterName: "New SMSF Setup", clientName: "Nguyen SMSF", abn: null, adviserGroupId: "riverx", type: "New SMSF", stage: "Prepare", due: "26 Mar" },
-  { id: "M008", matterName: "New SMSF Setup", clientName: "Thompson SMSF", abn: null, adviserGroupId: "clime", type: "New SMSF", stage: "Lodge", due: "28 Mar" },
+  { id: "M001", matterName: "New SMSF Setup", clientName: "Smith Family Superannuation Fund", abn: "12 345 678 901", organisationId: "liberty", type: "New SMSF", stage: "Check", due: "22 Mar" },
+  { id: "M002", matterName: "Existing SMSF Onboarding", clientName: "Johnson Retirement Fund", abn: "45 678 901 234", organisationId: "clime", type: "Existing", stage: "Prepare", due: "25 Mar" },
+  { id: "M003", matterName: "Corporate Trustee Conversion", clientName: "Williams Super Fund", abn: "23 456 789 012", organisationId: "aap", type: "Corp Trustee", stage: "Lodge", due: "28 Mar" },
+  { id: "M004", matterName: "New SMSF Setup", clientName: "Brown Family Super", abn: null, organisationId: "riverx", type: "New SMSF", stage: "Start", due: "30 Mar" },
+  { id: "M005", matterName: "Annual Compliance", clientName: "Chen Investment Fund", abn: "34 567 890 123", organisationId: "clime", type: "Compliance", stage: "Active", due: "—" },
+  { id: "M006", matterName: "New SMSF Setup", clientName: "Davis Investment Fund", abn: "78 901 234 567", organisationId: "liberty", type: "New SMSF", stage: "Check", due: "24 Mar" },
+  { id: "M007", matterName: "New SMSF Setup", clientName: "Nguyen SMSF", abn: null, organisationId: "riverx", type: "New SMSF", stage: "Prepare", due: "26 Mar" },
+  { id: "M008", matterName: "New SMSF Setup", clientName: "Thompson SMSF", abn: null, organisationId: "clime", type: "New SMSF", stage: "Lodge", due: "28 Mar" },
 ];
 
 export const DEMO_ACCOUNTS: StaffSession[] = [
@@ -54,7 +54,7 @@ export const DEMO_ACCOUNTS: StaffSession[] = [
   { email: "michael@aap.com.au", name: "Michael Torres", role: "Compliance Officer", initials: "MT", color: "#059669" },
 ];
 
-export const INITIAL_ADVISER_GROUPS: AdviserGroup[] = [
+export const INITIAL_ORGANISATIONS: Organisation[] = [
   { id: "clime", name: "Clime ASX", description: "Referrer · Financial planning", clients: 8, active: 5, contact: "David Chen · david@clime.com.au", letter: "C", bgColor: "#dbeafe", textColor: "#1d4ed8" },
   { id: "liberty", name: "Liberty", description: "Referrer · Mortgage broker", clients: 5, active: 3, contact: "Sarah Lane · sarah@liberty.com.au", letter: "L", bgColor: "#dcfce7", textColor: "#15803d" },
   { id: "riverx", name: "RiverX", description: "Referrer · Wealth management", clients: 3, active: 1, contact: "Mark Rivers · mark@riverx.com.au", letter: "R", bgColor: "#fdf4ff", textColor: "#7e22ce" },

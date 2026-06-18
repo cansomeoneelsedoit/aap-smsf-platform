@@ -6,7 +6,7 @@ export interface MatterSummary {
   id: string;
   name: string;
   sub: string;
-  adviserGroup: string;
+  organisation: string;
   cbClass: string;
   type: string;
   stage: Stage;
@@ -51,7 +51,16 @@ export interface FileNote {
   draft?: boolean;
 }
 
-export interface AdviserGroup {
+export interface MatterDocument {
+  id: string;
+  name: string;
+  financialYear: string;
+  sizeLabel: string;
+  modifiedAt: string;
+  webUrl: string;
+}
+
+export interface Organisation {
   id: string;
   name: string;
   description: string;
@@ -61,6 +70,13 @@ export interface AdviserGroup {
   letter: string;
   bgColor: string;
   textColor: string;
+}
+
+export interface OrganisationMicrosoftIntegration {
+  organisationId: string;
+  microsoftTenantId: string | null;
+  sharepointSiteId: string | null;
+  sharepointDriveId: string | null;
 }
 
 export type PartyRoleLabel = "Trustee" | "Director" | "Authorised party" | "Member";
@@ -98,7 +114,7 @@ export interface ClientSummary {
   id: string;
   name: string;
   abn: string | null;
-  adviserGroup: string;
+  organisation: string;
   cbClass: string;
   matterCount: number;
 }

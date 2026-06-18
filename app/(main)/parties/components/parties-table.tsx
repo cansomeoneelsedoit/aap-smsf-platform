@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { AdviserGroupBadge } from "@/components/brand/adviser-group-badge";
+import { OrganisationBadge } from "@/components/brand/organisation-badge";
 import type { ClientSummary } from "@/lib/types";
 
 export function PartiesTable({ clients }: { clients: ClientSummary[] }) {
@@ -12,7 +12,7 @@ export function PartiesTable({ clients }: { clients: ClientSummary[] }) {
       <thead>
         <tr className="bg-brand-surface text-left text-[10px] font-bold uppercase tracking-wider text-brand-text-3">
           <th className="border-b border-brand-border px-4 py-2.5">Client / Fund</th>
-          <th className="border-b border-brand-border px-4 py-2.5">Adviser group</th>
+          <th className="border-b border-brand-border px-4 py-2.5">Organisation</th>
         </tr>
       </thead>
       <tbody>
@@ -29,7 +29,7 @@ export function PartiesTable({ clients }: { clients: ClientSummary[] }) {
               )}
             </td>
             <td className="border-b border-brand-surface-2 px-4 py-2.5">
-              <AdviserGroupBadge name={c.adviserGroup} cbClass={c.cbClass} />
+              <OrganisationBadge name={c.organisation} cbClass={c.cbClass} />
             </td>
           </tr>
         ))}

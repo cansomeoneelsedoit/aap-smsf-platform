@@ -226,7 +226,7 @@ export function ClientCreateForm({
 }) {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [adviserGroupId, setAdviserGroupId] = useState("");
+  const [organisationId, setOrganisationId] = useState("");
   const [corporate, setCorporate] = useState(false);
   const [trustees, setTrustees] = useState<SelectedPerson[]>([]);
   const [company, setCompany] = useState<SelectedCompany | null>(null);
@@ -236,7 +236,7 @@ export function ClientCreateForm({
 
   const handleSubmit = async () => {
     if (!name.trim()) return toast.error("Client name is required");
-    if (!adviserGroupId) return toast.error("Please select an adviser group");
+    if (!organisationId) return toast.error("Please select an organisation");
     if (!corporate && trustees.length === 0)
       return toast.error("Add at least one individual trustee");
     if (corporate && !company) return toast.error("Add a corporate trustee");
@@ -247,7 +247,7 @@ export function ClientCreateForm({
     try {
       const result = await createClientAction({
         name,
-        adviserGroupId,
+        organisationId,
         trusteeType: corporate ? "corporate" : "individual",
         individualTrustees: corporate ? [] : trustees.map(toPersonRef),
         corporateTrustee: corporate
@@ -293,10 +293,10 @@ export function ClientCreateForm({
             />
           </div>
           <div>
-            <Label>Adviser group</Label>
-            <Select value={adviserGroupId} onValueChange={setAdviserGroupId}>
+            <Label>Organisation</Label>
+            <Select value={organisationId} onValueChange={setOrganisationId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select adviser group…" />
+                <SelectValue placeholder="Select organisation…" />
               </SelectTrigger>
               <SelectContent>
                 {groups.map((g) => (

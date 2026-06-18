@@ -28,13 +28,15 @@ const titleMap: Record<string, string> = {
   "/compliance": "Compliance Queue",
   "/lodgement": "Lodgement Queue",
   "/kyc": "KYC Management",
-  "/users": "Staff Profiles & Assignments",
+  "/admin/users": "Staff Profiles & Assignments",
   "/notifications": "Notifications",
-  "/audit-log": "Audit Log",
+  "/admin/audit-log": "Audit Log",
+  "/admin/organisations": "Organisations",
 };
 
 const mainNav = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/notifications", label: "Notifications", badge: "5" },
   { href: "/matters", label: "Matters", badge: "12" },
   { href: "/clients", label: "Clients" },
   { href: "/companies", label: "Companies" },
@@ -49,10 +51,10 @@ const queueNav = [
 const toolsNav = [{ href: "/kyc", label: "KYC" }];
 
 const adminNav = [
-  { href: "/users", label: "Staff Profiles" },
-  { href: "/notifications", label: "Notifications", badge: "5" },
-  { href: "/audit-log", label: "Audit Log" },
-];
+  { href: "/admin/users", label: "Staff Profiles" },
+  { href: "/admin/audit-log", label: "Audit Log" },
+  { href: "/admin/organisations", label: "Organisations", masterOwnerOnly: true },
+] as const;
 
 function NavItem({
   href,
@@ -99,6 +101,9 @@ function NavItem({
 function StaffSidebar({ session }: { session: Session }) {
   const router = useRouter();
   const user = session.user;
+  const visibleAdminNav = adminNav.filter(
+    (item) => !("masterOwnerOnly" in item && item.masterOwnerOnly) || user.staffRole === "MASTER_OWNER"
+  );
 
   const handleSignOut = async () => {
     await signOut();
@@ -136,8 +141,8 @@ function StaffSidebar({ session }: { session: Session }) {
         <div className="px-4 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-wider text-brand-text-3">
           Admin
         </div>
-        {adminNav.map((item) => (
-          <NavItem key={item.href} {...item} />
+        {visibleAdminNav.map((item) => (
+          <NavItem key={item.href} href={item.href} label={item.label} />
         ))}
       </div>
 
@@ -195,6 +200,8 @@ export function StaffShell({
     } else if (pathname.match(/\/(parties|clients)\/[^/]+$/)) {
       title = "Client Detail";
     }
+  } else if (pathname.startsWith("/admin/organisations/")) {
+    title = "Organisation Detail";
   } else {
     title = titleMap[pathname] ?? "Admin Autopilot";
   }

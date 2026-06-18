@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { AdviserGroupBadge } from "@/components/brand/adviser-group-badge";
+import { OrganisationBadge } from "@/components/brand/organisation-badge";
 import { StagePill } from "@/components/brand/stage-pill";
 import { CardEditButton } from "./card-edit-button";
 import { PartyTrusteesCard } from "./party-trustees-card";
@@ -196,7 +196,7 @@ export function PartyDetail({ client }: { client: ClientPartyDetailUi }) {
 
       <Card className="mb-4 p-5">
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <AdviserGroupBadge name={client.adviserGroup} cbClass={client.cbClass} />
+          <OrganisationBadge name={client.organisation} cbClass={client.cbClass} />
         </div>
         <h2 className="text-[22px] font-extrabold tracking-tight">{client.name}</h2>
         <p className="text-[13px] text-brand-text-2">

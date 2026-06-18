@@ -101,7 +101,7 @@ export async function createMatterAction(name: string, clientPartyId: string, ty
   return { success: true, displayId };
 }
 
-export async function addAdviserGroupAction(name: string) {
+export async function addOrganisationAction(name: string) {
   await requireStaffSession();
   const colors = [
     { bg: "#dbeafe", text: "#1d4ed8" },
@@ -110,13 +110,13 @@ export async function addAdviserGroupAction(name: string) {
     { bg: "#fff7ed", text: "#c2410c" },
   ];
   const pick = colors[Math.floor(Math.random() * colors.length)];
-  const id = `ag-${Date.now()}`;
+  const id = `org-${Date.now()}`;
 
-  await prisma.adviserGroup.create({
+  await prisma.organisation.create({
     data: {
       id,
       name,
-      description: "New adviser group · 0 clients",
+      description: "New organisation · 0 clients",
       contactName: "No contact",
       contactEmail: "contact@example.com",
       letter: name[0].toUpperCase(),
@@ -127,6 +127,7 @@ export async function addAdviserGroupAction(name: string) {
   });
 
   revalidatePath("/companies");
+  revalidatePath("/admin/organisations");
   return { success: true };
 }
 
@@ -228,7 +229,7 @@ export async function addAuditEntryAction(
     entity ?? matterDisplayId ?? "",
     session.user.id
   );
-  revalidatePath("/audit-log");
+  revalidatePath("/admin/audit-log");
   if (matterDisplayId) revalidatePath(`/matters/${matterDisplayId}`);
   return { success: true };
 }
@@ -243,7 +244,7 @@ export async function mockLodgeAction(matterDisplayId: string) {
     matterDisplayId,
     session.user.id
   );
-  revalidatePath("/audit-log");
+  revalidatePath("/admin/audit-log");
   revalidatePath(`/matters/${matterDisplayId}`);
   return { success: true };
 }
@@ -299,6 +300,6 @@ export async function saveStageAssignmentAction(stage: Stage, staffId: string) {
     create: { stage, staffId },
     update: { staffId },
   });
-  revalidatePath("/users");
+  revalidatePath("/admin/users");
   return { success: true };
 }

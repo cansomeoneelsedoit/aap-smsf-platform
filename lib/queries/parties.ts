@@ -22,13 +22,13 @@ export async function getPartyById(partyId: string) {
 export async function getClientParties() {
   return prisma.party.findMany({
     where: { type: "TRUST" },
-    include: { adviserGroup: true, trust: true },
+    include: { organisation: true, trust: true },
     orderBy: { name: "asc" },
   });
 }
 
 const clientListInclude = {
-  adviserGroup: true,
+  organisation: true,
   trust: true,
   matters: { select: { id: true } },
 } as const;
@@ -45,7 +45,7 @@ export async function getClientPartySummaries() {
 }
 
 const clientDetailInclude = {
-  adviserGroup: true,
+  organisation: true,
   trust: true,
   matters: {
     include: { owner: { include: { staffProfile: true } } },

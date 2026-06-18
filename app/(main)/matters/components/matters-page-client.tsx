@@ -21,9 +21,9 @@ export function MattersPageClient({ matters }: { matters: MatterSummary[] }) {
         !q ||
         m.name.toLowerCase().includes(q) ||
         m.id.toLowerCase().includes(q) ||
-        m.adviserGroup.toLowerCase().includes(q);
+        m.organisation.toLowerCase().includes(q);
       const matchStage = !stageFilter || m.stage === stageFilter;
-      const matchGroup = !groupFilter || m.adviserGroup === groupFilter;
+      const matchGroup = !groupFilter || m.organisation === groupFilter;
       return matchSearch && matchStage && matchGroup;
     });
   }, [matters, search, stageFilter, groupFilter]);
@@ -52,7 +52,7 @@ export function MattersPageClient({ matters }: { matters: MatterSummary[] }) {
           value={groupFilter}
           onChange={(e) => setGroupFilter(e.target.value)}
         >
-          <option value="">All adviser groups</option>
+          <option value="">All organisations</option>
           {["Clime ASX", "Liberty", "RiverX", "AAP"].map((g) => (
             <option key={g} value={g}>{g}</option>
           ))}

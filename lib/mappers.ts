@@ -1,17 +1,19 @@
 import type {
   Stage as UiStage,
   MatterSummary,
-  AdviserGroup as UiAdviserGroup,
+  Organisation as UiOrganisation,
   AuditEntry,
   Task,
   FileNote,
+  MatterDocument,
   MatterContacts,
   ContactPerson,
   ClientSummary,
   ClientMatterSummary,
 } from "@/lib/types";
+import type { MatterDocumentItem } from "@/lib/microsoft-graph/sharepoint";
 import type {
-  AdviserGroup as DbAdviserGroup,
+  Organisation as DbOrganisation,
   Matter,
   Party,
   PersonDetails,
@@ -49,13 +51,13 @@ export type TrusteeParty = Party & {
 };
 
 export type ClientParty = Party & {
-  adviserGroup: DbAdviserGroup | null;
+  organisation: DbOrganisation | null;
   trust: TrustDetails | null;
   relationsOut: (PartyRelationship & { childParty: TrusteeParty })[];
 };
 
 export type MatterWithRelations = Matter & {
-  client: Party & { adviserGroup: DbAdviserGroup | null };
+  client: Party & { organisation: DbOrganisation | null };
   owner: (User & { staffProfile: StaffProfile | null }) | null;
 };
 
@@ -64,8 +66,8 @@ export function mapMatterToSummary(matter: MatterWithRelations): MatterSummary {
     id: matter.displayId,
     name: matter.client.name,
     sub: `${matter.displayId} · ${matter.name}`,
-    adviserGroup: matter.client.adviserGroup?.name ?? "—",
-    cbClass: matter.client.adviserGroup?.cbClass ?? "cb-other",
+    organisation: matter.client.organisation?.name ?? "—",
+    cbClass: matter.client.organisation?.cbClass ?? "cb-other",
     type: matter.matterType,
     stage: matter.stage as UiStage,
     pillClass: STAGE_PILL_MAP[matter.stage],
@@ -136,7 +138,7 @@ export interface EditableParty {
 }
 
 export type ClientPartyListItem = Party & {
-  adviserGroup: DbAdviserGroup | null;
+  organisation: DbOrganisation | null;
   trust: TrustDetails | null;
   matters: { id: string }[];
 };
@@ -149,8 +151,8 @@ export interface ClientPartyDetailUi {
   id: string;
   name: string;
   abn: string | null;
-  adviserGroup: string;
-  adviserGroupId: string | null;
+  organisation: string;
+  organisationId: string | null;
   cbClass: string;
   contacts: MatterContacts;
   currentMatters: ClientMatterSummary[];
@@ -162,8 +164,8 @@ export function mapClientPartyToSummary(party: ClientPartyListItem): ClientSumma
     id: party.id,
     name: party.name,
     abn: party.trust?.abn ?? null,
-    adviserGroup: party.adviserGroup?.name ?? "—",
-    cbClass: party.adviserGroup?.cbClass ?? "cb-other",
+    organisation: party.organisation?.name ?? "—",
+    cbClass: party.organisation?.cbClass ?? "cb-other",
     matterCount: party.matters.length,
   };
 }
@@ -184,9 +186,9 @@ export function mapClientPartyWithMatters(party: ClientPartyDetail): ClientParty
     id: party.id,
     name: party.name,
     abn: party.trust?.abn ?? null,
-    adviserGroup: party.adviserGroup?.name ?? "—",
-    adviserGroupId: party.adviserGroupId,
-    cbClass: party.adviserGroup?.cbClass ?? "cb-other",
+    organisation: party.organisation?.name ?? "—",
+    organisationId: party.organisationId,
+    cbClass: party.organisation?.cbClass ?? "cb-other",
     contacts: mapMatterContacts(party),
     currentMatters: matters.filter((m) => m.stage !== "Active"),
     previousMatters: matters.filter((m) => m.stage === "Active"),
@@ -213,9 +215,9 @@ export function mapPartyToEditable(
   };
 }
 
-export function mapAdviserGroupToUi(
-  group: DbAdviserGroup & { clients: { matters: { stage: Stage }[] }[] }
-): UiAdviserGroup {
+export function mapOrganisationToUi(
+  group: DbOrganisation & { clients: { matters: { stage: Stage }[] }[] }
+): UiOrganisation {
   const matters = group.clients.flatMap((c) => c.matters);
   const active = matters.filter((m) => m.stage === "Active").length;
 
@@ -281,6 +283,31 @@ export function mapFileNoteToUi(note: DbFileNote & { author: User }): FileNote {
     tags: note.tags,
     pinned: note.pinned,
     draft: note.draft,
+  };
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function mapMatterDocumentToUi(document: MatterDocumentItem): MatterDocument {
+  return {
+    id: document.id,
+    name: document.name,
+    financialYear: document.financialYear,
+    sizeLabel: formatFileSize(document.size),
+    modifiedAt: new Date(document.modifiedAt).toLocaleDateString("en-AU", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+    webUrl: document.webUrl,
   };
 }
 

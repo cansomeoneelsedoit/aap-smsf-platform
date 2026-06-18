@@ -19,8 +19,8 @@ export function PartiesPageClient({ clients }: { clients: ClientSummary[] }) {
         !q ||
         c.name.toLowerCase().includes(q) ||
         (c.abn?.toLowerCase().includes(q) ?? false) ||
-        c.adviserGroup.toLowerCase().includes(q);
-      const matchGroup = !groupFilter || c.adviserGroup === groupFilter;
+        c.organisation.toLowerCase().includes(q);
+      const matchGroup = !groupFilter || c.organisation === groupFilter;
       return matchSearch && matchGroup;
     });
   }, [clients, search, groupFilter]);
@@ -39,7 +39,7 @@ export function PartiesPageClient({ clients }: { clients: ClientSummary[] }) {
           value={groupFilter}
           onChange={(e) => setGroupFilter(e.target.value)}
         >
-          <option value="">All adviser groups</option>
+          <option value="">All organisations</option>
           {["Clime ASX", "Liberty", "RiverX", "AAP"].map((g) => (
             <option key={g} value={g}>{g}</option>
           ))}

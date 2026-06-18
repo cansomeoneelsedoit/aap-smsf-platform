@@ -8,7 +8,7 @@ const variants: Record<string, string> = {
   "cb-other": "bg-brand-surface-2 text-[#374151]",
 };
 
-export function AdviserGroupBadge({
+export function OrganisationBadge({
   name,
   className,
   cbClass,

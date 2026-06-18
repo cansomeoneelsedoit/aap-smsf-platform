@@ -5,9 +5,11 @@ import {
   getMatterFileNotes,
   getMatterTasks,
 } from "@/lib/queries/matters";
+import { getMatterDocumentsFromSharePoint } from "@/lib/queries/documents";
 import {
   mapFileNoteToUi,
   mapMatterContacts,
+  mapMatterDocumentToUi,
   mapMatterToSummary,
   mapTaskToUi,
 } from "@/lib/mappers";
@@ -24,9 +26,10 @@ export default async function MatterDetailPage({
     notFound();
   }
 
-  const [tasks, fileNotes] = await Promise.all([
+  const [tasks, fileNotes, documents] = await Promise.all([
     getMatterTasks(matter.id),
     getMatterFileNotes(matter.id),
+    getMatterDocumentsFromSharePoint(matterId),
   ]);
 
   return (
@@ -36,6 +39,7 @@ export default async function MatterDetailPage({
       contacts={mapMatterContacts(matter.client)}
       tasks={tasks.map(mapTaskToUi)}
       fileNotes={fileNotes.map(mapFileNoteToUi)}
+      documents={documents.map(mapMatterDocumentToUi)}
     />
   );
 }

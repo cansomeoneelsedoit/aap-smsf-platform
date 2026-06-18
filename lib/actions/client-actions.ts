@@ -35,7 +35,7 @@ export interface PersonRef {
 
 export interface CreateClientInput {
   name: string;
-  adviserGroupId: string;
+  organisationId: string;
   trusteeType: "individual" | "corporate";
   individualTrustees: PersonRef[];
   corporateTrustee?: {
@@ -74,7 +74,7 @@ export async function createClientAction(input: CreateClientInput) {
   const session = await requireStaffSession();
 
   if (!input.name.trim()) return { error: "Client name is required" };
-  if (!input.adviserGroupId) return { error: "Adviser group is required" };
+  if (!input.organisationId) return { error: "Organisation is required" };
 
   if (input.trusteeType === "individual") {
     if (input.individualTrustees.length === 0) {
@@ -92,7 +92,7 @@ export async function createClientAction(input: CreateClientInput) {
       data: {
         type: "TRUST",
         name: input.name.trim(),
-        adviserGroupId: input.adviserGroupId,
+        organisationId: input.organisationId,
         trust: { create: {} },
       },
     });

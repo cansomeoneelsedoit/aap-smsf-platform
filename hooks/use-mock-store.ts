@@ -3,8 +3,9 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { uploadDocumentAction } from "@/lib/actions/document-actions";
 import {
-  addAdviserGroupAction,
+  addOrganisationAction,
   addAuditEntryAction,
   addTaskAction,
   approveCallNoteAction,
@@ -107,9 +108,9 @@ export function useMatterActions() {
       closeModal();
       refresh();
     },
-    addAdviserGroup: async (name: string) => {
-      await addAdviserGroupAction(name);
-      toast.success(`Adviser group added: ${name}`);
+    addOrganisation: async (name: string) => {
+      await addOrganisationAction(name);
+      toast.success(`Organisation added: ${name}`);
       closeModal();
       refresh();
     },
@@ -125,9 +126,19 @@ export function useMatterActions() {
       closeModal();
       refresh();
     },
-    uploadDoc: async (matterId: string, fileName: string) => {
-      await addAuditEntryAction(matterId, "DOCUMENT_UPLOAD", fileName);
-      toast.success(`Uploaded: ${fileName}`);
+    uploadDoc: async (matterId: string, file: File, financialYear: string) => {
+      const formData = new FormData();
+      formData.append("matterDisplayId", matterId);
+      formData.append("financialYear", financialYear);
+      formData.append("file", file);
+
+      const result = await uploadDocumentAction(formData);
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(`Uploaded: ${file.name}`);
       closeModal();
       refresh();
     },

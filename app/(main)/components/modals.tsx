@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +25,7 @@ import {
 import { PartySearchInput } from "@/app/(main)/parties/components/party-search-input";
 import { useMockStore, useMatterActions } from "@/hooks/use-mock-store";
 import type { PartySearchResult } from "@/lib/types";
+import { MAX_UPLOAD_BYTES } from "@/lib/microsoft-graph/constants";
 import { cn } from "@/lib/utils";
 
 function ModalWrapper({
@@ -187,7 +189,7 @@ export function Modals() {
     acceptHandoff,
     saveProfile,
     saveFileNote,
-    addAdviserGroup,
+    addOrganisation,
     approveCallNote,
     uploadDoc,
     sendClientMessage,
@@ -211,7 +213,9 @@ export function Modals() {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskAssignee, setTaskAssignee] = useState("Emma Wilson");
   const [taskDue, setTaskDue] = useState("");
-  const [uploadFile, setUploadFile] = useState("uploaded_document.pdf");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadFinancialYear, setUploadFinancialYear] = useState("FY2026");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (activeModal === "new-matter" && preselectedMatterClient) {
@@ -224,7 +228,31 @@ export function Modals() {
       setMatterName("");
       setMatterClientLocked(false);
     }
+    if (activeModal !== "upload-doc") {
+      setUploadFile(null);
+      setUploadFinancialYear("FY2026");
+      setUploading(false);
+    }
   }, [activeModal, preselectedMatterClient, setPreselectedMatterClient]);
+
+  const handleUploadDocument = async () => {
+    if (!uploadFile) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+    if (uploadFile.size > MAX_UPLOAD_BYTES) {
+      toast.error("File must be 4 MB or smaller");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await uploadDoc(activeMatterId, uploadFile, uploadFinancialYear);
+      setUploadFile(null);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <>
@@ -296,16 +324,16 @@ export function Modals() {
 
       <ModalWrapper
         id="new-company"
-        title="Add adviser group"
+        title="Add organisation"
         footer={
           <>
             <Button variant="outline" onClick={closeModal}>Cancel</Button>
-            <Button onClick={() => { if (groupName) addAdviserGroup(groupName); setGroupName(""); }}>Add adviser group</Button>
+            <Button onClick={() => { if (groupName) addOrganisation(groupName); setGroupName(""); }}>Add organisation</Button>
           </>
         }
       >
         <div className="space-y-3">
-          <div><Label>Adviser group name</Label><Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Clime ASX" /></div>
+          <div><Label>Organisation name</Label><Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Clime ASX" /></div>
         </div>
       </ModalWrapper>
 
@@ -333,18 +361,36 @@ export function Modals() {
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={closeModal}>Cancel</Button>
-            <Button onClick={() => uploadDoc(activeMatterId, uploadFile)}>Upload</Button>
+            <Button variant="outline" onClick={closeModal} disabled={uploading}>
+              Cancel
+            </Button>
+            <Button onClick={handleUploadDocument} disabled={uploading || !uploadFile}>
+              {uploading ? "Uploading…" : "Upload"}
+            </Button>
           </>
         }
       >
         <div className="space-y-3">
-          <div><Label>Financial year</Label>
-            <Select defaultValue="FY2026"><SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="FY2026">FY2026</SelectItem><SelectItem value="FY2025">FY2025</SelectItem></SelectContent>
+          <div>
+            <Label>Financial year</Label>
+            <Select value={uploadFinancialYear} onValueChange={setUploadFinancialYear}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FY2026">FY2026</SelectItem>
+                <SelectItem value="FY2025">FY2025</SelectItem>
+              </SelectContent>
             </Select>
           </div>
-          <div><Label>File</Label><Input type="file" onChange={(e) => setUploadFile(e.target.files?.[0]?.name ?? "document.pdf")} /></div>
+          <div>
+            <Label>File</Label>
+            <Input
+              type="file"
+              onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+            />
+            <p className="mt-1 text-[11px] text-brand-text-3">Maximum file size: 4 MB</p>
+          </div>
         </div>
       </ModalWrapper>
 

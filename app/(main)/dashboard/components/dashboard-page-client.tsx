@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AdviserGroupBadge } from "@/components/brand/adviser-group-badge";
+import { OrganisationBadge } from "@/components/brand/organisation-badge";
 import { StagePill } from "@/components/brand/stage-pill";
 import { StatCard } from "@/components/brand/stat-card";
 import { Button } from "@/components/ui/button";
@@ -76,7 +76,7 @@ export function DashboardPageClient({ clients }: { clients: MatterSummary[] }) {
             <thead>
               <tr className="bg-brand-surface text-left text-[10px] font-bold uppercase text-brand-text-3">
                 <th className="px-4 py-2">Client</th>
-                <th className="px-4 py-2">Adviser group</th>
+                <th className="px-4 py-2">Organisation</th>
                 <th className="px-4 py-2">Stage</th>
                 <th className="px-4 py-2">Owner</th>
               </tr>
@@ -91,7 +91,7 @@ export function DashboardPageClient({ clients }: { clients: MatterSummary[] }) {
                     </Link>
                   </td>
                   <td className="border-t border-brand-surface-2 px-4 py-2.5">
-                    <AdviserGroupBadge name={c.adviserGroup} cbClass={c.cbClass} />
+                    <OrganisationBadge name={c.organisation} cbClass={c.cbClass} />
                   </td>
                   <td className="border-t border-brand-surface-2 px-4 py-2.5">
                     <StagePill stage={c.stage} pillClass={c.pillClass} />

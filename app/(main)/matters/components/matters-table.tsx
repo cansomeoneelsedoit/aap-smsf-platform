@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { AdviserGroupBadge } from "@/components/brand/adviser-group-badge";
+import { OrganisationBadge } from "@/components/brand/organisation-badge";
 import { StagePill } from "@/components/brand/stage-pill";
 import type { MatterSummary } from "@/lib/types";
 
@@ -13,7 +13,7 @@ export function MattersTable({ matters }: { matters: MatterSummary[] }) {
       <thead>
         <tr className="bg-brand-surface text-left text-[10px] font-bold uppercase tracking-wider text-brand-text-3">
           <th className="border-b border-brand-border px-4 py-2.5">Client / Fund</th>
-          <th className="border-b border-brand-border px-4 py-2.5">Adviser group</th>
+          <th className="border-b border-brand-border px-4 py-2.5">Organisation</th>
           <th className="border-b border-brand-border px-4 py-2.5">Type</th>
           <th className="border-b border-brand-border px-4 py-2.5">Stage</th>
           <th className="border-b border-brand-border px-4 py-2.5">Owner</th>
@@ -32,7 +32,7 @@ export function MattersTable({ matters }: { matters: MatterSummary[] }) {
               <div className="text-[11px] text-brand-text-3">{m.sub}</div>
             </td>
             <td className="border-b border-brand-surface-2 px-4 py-2.5">
-              <AdviserGroupBadge name={m.adviserGroup} cbClass={m.cbClass} />
+              <OrganisationBadge name={m.organisation} cbClass={m.cbClass} />
             </td>
             <td className="border-b border-brand-surface-2 px-4 py-2.5 text-[13px]">{m.type}</td>
             <td className="border-b border-brand-surface-2 px-4 py-2.5">

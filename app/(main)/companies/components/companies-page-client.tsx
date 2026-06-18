@@ -4,16 +4,16 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useMockStore } from "@/hooks/use-mock-store";
-import type { AdviserGroup } from "@/lib/types";
+import type { Organisation } from "@/lib/types";
 
-export function CompaniesPageClient({ groups }: { groups: AdviserGroup[] }) {
+export function CompaniesPageClient({ groups }: { groups: Organisation[] }) {
   const openModal = useMockStore((s) => s.openModal);
 
   return (
     <>
       <div className="mb-3.5 flex justify-end">
         <Button size="sm" onClick={() => openModal("new-company")}>
-          + Add adviser group
+          + Add organisation
         </Button>
       </div>
       <div className="grid gap-3.5 md:grid-cols-3">

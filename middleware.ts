@@ -11,9 +11,8 @@ const STAFF_PREFIXES = [
   "/compliance",
   "/lodgement",
   "/kyc",
-  "/users",
+  "/admin",
   "/notifications",
-  "/audit-log",
 ];
 
 export function middleware(request: NextRequest) {
@@ -50,9 +49,8 @@ export const config = {
     "/compliance/:path*",
     "/lodgement/:path*",
     "/kyc/:path*",
-    "/users/:path*",
+    "/admin/:path*",
     "/notifications/:path*",
-    "/audit-log/:path*",
     "/portal/:path*",
   ],
 };

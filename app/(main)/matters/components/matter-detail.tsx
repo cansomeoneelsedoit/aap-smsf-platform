@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { AdviserGroupBadge } from "@/components/brand/adviser-group-badge";
+import { OrganisationBadge } from "@/components/brand/organisation-badge";
 import { StagePill } from "@/components/brand/stage-pill";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MatterContactsCard } from "./matter-contacts";
 import { useMockStore, useMatterActions } from "@/hooks/use-mock-store";
 import { STAGE_COLORS, STAGE_INITIALS, STAGE_OWNER_MAP, STAGES } from "@/lib/mock-data";
-import type { FileNote, MatterContacts, MatterSummary, Task } from "@/lib/types";
+import type { FileNote, MatterContacts, MatterDocument, MatterSummary, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function MatterDetail({
@@ -22,12 +22,14 @@ export function MatterDetail({
   contacts,
   tasks,
   fileNotes,
+  documents,
 }: {
   matterId: string;
   matter: MatterSummary;
   contacts: MatterContacts;
   tasks: Task[];
   fileNotes: FileNote[];
+  documents: MatterDocument[];
 }) {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") ?? "overview";
@@ -62,7 +64,7 @@ export function MatterDetail({
           <span className="text-xs text-brand-text-3">
             Matter <strong>{matter.id}</strong>
           </span>
-          <AdviserGroupBadge name={matter.adviserGroup} cbClass={matter.cbClass} />
+          <OrganisationBadge name={matter.organisation} cbClass={matter.cbClass} />
           <Badge variant="amber" className="ml-auto">KYC review</Badge>
         </div>
         <h2 className="text-[22px] font-extrabold tracking-tight">{matter.name}</h2>
@@ -171,7 +173,7 @@ export function MatterDetail({
                   ["SMSF name", contacts.trust.name],
                   ["ABN", contacts.trust.abn ?? "—"],
                   ["Package", "Default + Accounting — $999/yr"],
-                  ["Adviser group", matter.adviserGroup],
+                  ["Organisation", matter.organisation],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between border-b border-brand-surface-2 px-[18px] py-2 text-[13px] last:border-0">
                     <span className="text-brand-text-2">{label}</span>
@@ -218,16 +220,38 @@ export function MatterDetail({
             </div>
             <Card>
               <CardContent className="space-y-2 pt-4">
-                <div className="flex items-center gap-2.5 rounded-brand-sm border border-brand-border p-3">
-                  <span>📋</span>
-                  <div className="flex-1">
-                    <div className="text-[13px] font-medium">Smith_Family_SMSF_Trust_Deed.pdf</div>
-                    <div className="text-[11px] text-brand-text-3">FY2026 · 2.1 MB · 18 Mar 2026</div>
-                  </div>
-                  <Button variant="outline" size="xs" onClick={() => openModal("sign", { signDocName: "Trust Deed" })}>
-                    Sign
-                  </Button>
-                </div>
+                {documents.length === 0 ? (
+                  <p className="text-[13px] text-brand-text-3">No documents uploaded yet.</p>
+                ) : (
+                  documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center gap-2.5 rounded-brand-sm border border-brand-border p-3"
+                    >
+                      <span>📋</span>
+                      <div className="flex-1 min-w-0">
+                        <a
+                          href={doc.webUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[13px] font-medium hover:text-brand-orange truncate block"
+                        >
+                          {doc.name}
+                        </a>
+                        <div className="text-[11px] text-brand-text-3">
+                          {doc.financialYear} · {doc.sizeLabel} · {doc.modifiedAt}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        onClick={() => openModal("sign", { signDocName: doc.name })}
+                      >
+                        Sign
+                      </Button>
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
           </TabsContent>

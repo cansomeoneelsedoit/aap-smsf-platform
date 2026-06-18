@@ -3,13 +3,13 @@ import { mapMatterToSummary } from "@/lib/mappers";
 import type { Stage } from "@/generated/prisma/client";
 
 const matterSummaryInclude = {
-  client: { include: { adviserGroup: true } },
+  client: { include: { organisation: true } },
   owner: { include: { staffProfile: true } },
 } as const;
 
 /** Client (trust) party with trustees and, for corporate trustees, their directors. */
 const clientContactsInclude = {
-  adviserGroup: true,
+  organisation: true,
   trust: true,
   relationsOut: {
     include: {
@@ -55,10 +55,27 @@ export async function getMattersByStage(stage: Stage) {
   return matters.map(mapMatterToSummary);
 }
 
-export async function getAdviserGroups() {
-  return prisma.adviserGroup.findMany({
+export async function getOrganisations() {
+  return prisma.organisation.findMany({
     include: { clients: { include: { matters: { select: { stage: true } } } } },
     orderBy: { name: "asc" },
+  });
+}
+
+export async function getOrganisationsWithMicrosoftIntegration() {
+  return prisma.organisation.findMany({
+    include: { microsoftIntegration: true },
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function getOrganisationById(id: string) {
+  return prisma.organisation.findUnique({
+    where: { id },
+    include: {
+      microsoftIntegration: true,
+      clients: { include: { matters: { select: { stage: true } } } },
+    },
   });
 }
 

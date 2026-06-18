@@ -1,10 +1,30 @@
 import { betterAuth } from "better-auth";
+import type { MicrosoftEntraIDProfile } from "better-auth/social-providers";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { customSession } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/db";
 import { getBetterAuthSecret, getBetterAuthUrl, getTrustedOrigins } from "@/lib/env";
-import type { StaffRole } from "@/generated/prisma/client";
+import { getMicrosoftAuthConfig } from "@/lib/microsoft-auth-config";
+import {
+  deriveStaffInitials,
+  getDefaultStaffColor,
+} from "@/lib/staff-profile-utils";
+import { AccountType, type StaffRole } from "@/generated/prisma/client";
+
+const microsoftAuth = getMicrosoftAuthConfig();
+
+function mapMicrosoftProfileToStaffUser(profile: MicrosoftEntraIDProfile) {
+  return {
+    accountType: AccountType.STAFF,
+    image: undefined,
+    email:
+      profile.email ??
+      profile.preferred_username ??
+      profile.upn ??
+      undefined,
+  };
+}
 
 const authOptions = {
   database: prismaAdapter(prisma, { provider: "postgresql" as const }),
@@ -15,12 +35,53 @@ const authOptions = {
     enabled: true,
     disableSignUp: true,
   },
+  socialProviders: microsoftAuth
+    ? {
+        microsoft: {
+          clientId: microsoftAuth.clientId,
+          clientSecret: microsoftAuth.clientSecret,
+          tenantId: microsoftAuth.tenantId,
+          prompt: "select_account" as const,
+          disableProfilePhoto: true,
+          mapProfileToUser: mapMicrosoftProfileToStaffUser,
+        },
+      }
+    : undefined,
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["microsoft"],
+    },
+  },
   user: {
     additionalFields: {
       accountType: {
         type: "string" as const,
         required: true,
         input: false,
+      },
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user: { id: string; name: string; accountType?: string }) => {
+          if (user.accountType !== AccountType.STAFF) return;
+
+          const existingProfile = await prisma.staffProfile.findUnique({
+            where: { userId: user.id },
+          });
+          if (existingProfile) return;
+
+          await prisma.staffProfile.create({
+            data: {
+              userId: user.id,
+              role: "BOOKKEEPER" satisfies StaffRole,
+              initials: deriveStaffInitials(user.name),
+              color: getDefaultStaffColor(),
+            },
+          });
+        },
       },
     },
   },

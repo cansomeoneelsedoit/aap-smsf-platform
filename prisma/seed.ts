@@ -3,7 +3,7 @@ import { hashPassword } from "better-auth/crypto";
 import { prisma } from "@/lib/db";
 import {
   DEMO_ACCOUNTS,
-  INITIAL_ADVISER_GROUPS,
+  INITIAL_ORGANISATIONS,
   INITIAL_AUDIT_LOG,
   INITIAL_FILE_NOTES,
   INITIAL_TASKS,
@@ -252,9 +252,9 @@ async function upsertRelationship(parentPartyId: string, childPartyId: string, r
 async function main() {
   console.log("Seeding database...");
 
-  for (const group of INITIAL_ADVISER_GROUPS) {
+  for (const group of INITIAL_ORGANISATIONS) {
     const [contactName, contactEmail] = group.contact.split(" · ");
-    await prisma.adviserGroup.upsert({
+    await prisma.organisation.upsert({
       where: { id: group.id },
       create: {
         id: group.id,
@@ -280,7 +280,7 @@ async function main() {
     });
   }
 
-  await prisma.adviserGroup.upsert({
+  await prisma.organisation.upsert({
     where: { id: "aap" },
     create: {
       id: "aap",
@@ -347,12 +347,12 @@ async function main() {
         id: trustPartyId,
         type: "TRUST",
         name: seed.clientName,
-        adviserGroupId: seed.adviserGroupId,
+        organisationId: seed.organisationId,
         trust: { create: { abn: seed.abn } },
       },
       update: {
         name: seed.clientName,
-        adviserGroupId: seed.adviserGroupId,
+        organisationId: seed.organisationId,
         trust: {
           upsert: { create: { abn: seed.abn }, update: { abn: seed.abn } },
         },
