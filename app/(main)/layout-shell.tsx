@@ -16,6 +16,7 @@ import { useMockStore } from "@/hooks/use-mock-store";
 import { signOut } from "@/lib/auth-client";
 import { mapStaffRoleToLabel } from "@/lib/mappers";
 import type { Session } from "@/lib/auth";
+import type { NavBadgeCounts } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const titleMap: Record<string, string> = {
@@ -23,7 +24,6 @@ const titleMap: Record<string, string> = {
   "/matters": "Matters",
   "/clients": "Clients",
   "/parties": "Clients",
-  "/companies": "Companies",
   "/preparation": "Preparation Queue",
   "/compliance": "Compliance Queue",
   "/lodgement": "Lodgement Queue",
@@ -34,18 +34,41 @@ const titleMap: Record<string, string> = {
   "/admin/organisations": "Organisations",
 };
 
-const mainNav = [
+const mainNav: Array<{
+  href: string;
+  label: string;
+  badgeKey?: keyof NavBadgeCounts;
+}> = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/notifications", label: "Notifications", badge: "5" },
-  { href: "/matters", label: "Matters", badge: "12" },
+  { href: "/notifications", label: "Notifications", badgeKey: "notifications" },
+  { href: "/matters", label: "Matters" },
   { href: "/clients", label: "Clients" },
-  { href: "/companies", label: "Companies" },
 ];
 
-const queueNav = [
-  { href: "/preparation", label: "Preparation", badge: "4", badgeClass: "bg-brand-purple" },
-  { href: "/compliance", label: "Compliance", badge: "3", badgeClass: "bg-brand-amber" },
-  { href: "/lodgement", label: "Lodgement", badge: "2", badgeClass: "bg-brand-green" },
+const queueNav: Array<{
+  href: string;
+  label: string;
+  badgeKey: keyof NavBadgeCounts;
+  badgeClass: string;
+}> = [
+  {
+    href: "/preparation",
+    label: "Preparation",
+    badgeKey: "preparation",
+    badgeClass: "bg-brand-purple",
+  },
+  {
+    href: "/compliance",
+    label: "Compliance",
+    badgeKey: "compliance",
+    badgeClass: "bg-brand-amber",
+  },
+  {
+    href: "/lodgement",
+    label: "Lodgement",
+    badgeKey: "lodgement",
+    badgeClass: "bg-brand-green",
+  },
 ];
 
 const toolsNav = [{ href: "/kyc", label: "KYC" }];
@@ -55,6 +78,10 @@ const adminNav = [
   { href: "/admin/audit-log", label: "Audit Log" },
   { href: "/admin/organisations", label: "Organisations", masterOwnerOnly: true },
 ] as const;
+
+function formatBadge(count: number): string | undefined {
+  return count > 0 ? String(count) : undefined;
+}
 
 function NavItem({
   href,
@@ -98,7 +125,7 @@ function NavItem({
   );
 }
 
-function StaffSidebar({ session }: { session: Session }) {
+function StaffSidebar({ session, navBadges }: { session: Session; navBadges: NavBadgeCounts }) {
   const router = useRouter();
   const user = session.user;
   const visibleAdminNav = adminNav.filter(
@@ -121,14 +148,25 @@ function StaffSidebar({ session }: { session: Session }) {
           Main
         </div>
         {mainNav.map((item) => (
-          <NavItem key={item.href} {...item} />
+          <NavItem
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            badge={item.badgeKey ? formatBadge(navBadges[item.badgeKey]) : undefined}
+          />
         ))}
 
         <div className="px-4 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-wider text-brand-text-3">
           Queues
         </div>
         {queueNav.map((item) => (
-          <NavItem key={item.href} {...item} />
+          <NavItem
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            badge={formatBadge(navBadges[item.badgeKey])}
+            badgeClass={item.badgeClass}
+          />
         ))}
 
         <div className="px-4 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-wider text-brand-text-3">
@@ -183,9 +221,11 @@ function StaffSidebar({ session }: { session: Session }) {
 
 export function StaffShell({
   session,
+  navBadges,
   children,
 }: {
   session: Session;
+  navBadges: NavBadgeCounts;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -208,7 +248,7 @@ export function StaffShell({
 
   return (
     <div className="flex min-h-screen">
-      <StaffSidebar session={session} />
+      <StaffSidebar session={session} navBadges={navBadges} />
       <div className="flex flex-1 flex-col overflow-hidden bg-brand-surface">
         <header className="flex h-14 shrink-0 items-center gap-3 border-b border-brand-border bg-white px-6">
           <h1 className="text-base font-bold tracking-tight text-brand-dark">{title}</h1>

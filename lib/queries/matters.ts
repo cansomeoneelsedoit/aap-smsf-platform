@@ -55,6 +55,18 @@ export async function getMattersByStage(stage: Stage) {
   return matters.map(mapMatterToSummary);
 }
 
+export async function getOwnedMatterCountsByStage(ownerId: string) {
+  const rows = await prisma.matter.groupBy({
+    by: ["stage"],
+    where: { ownerId },
+    _count: { _all: true },
+  });
+
+  return Object.fromEntries(rows.map((row) => [row.stage, row._count._all])) as Partial<
+    Record<Stage, number>
+  >;
+}
+
 export async function getOrganisations() {
   return prisma.organisation.findMany({
     include: { clients: { include: { matters: { select: { stage: true } } } } },

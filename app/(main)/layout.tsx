@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAppSession } from "@/lib/auth";
+import { getStaffNavBadgeCounts } from "@/lib/queries/nav-badges";
 import { StaffShell } from "./layout-shell";
 
 export default async function MainLayout({
@@ -19,8 +20,10 @@ export default async function MainLayout({
     redirect("/portal");
   }
 
+  const navBadges = await getStaffNavBadgeCounts(session.user.id);
+
   return (
-    <StaffShell session={session}>
+    <StaffShell session={session} navBadges={navBadges}>
       {children}
       {modal}
     </StaffShell>

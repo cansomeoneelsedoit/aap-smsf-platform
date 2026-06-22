@@ -37,6 +37,10 @@ async function addAuditEntry(
   });
 }
 
+function revalidateStaffLayout() {
+  revalidatePath("/dashboard", "layout");
+}
+
 export async function advanceStageAction(matterDisplayId: string) {
   const session = await requireStaffSession();
   const matter = await prisma.matter.findUnique({ where: { displayId: matterDisplayId } });
@@ -66,6 +70,7 @@ export async function advanceStageAction(matterDisplayId: string) {
 
   revalidatePath("/matters");
   revalidatePath(`/matters/${matterDisplayId}`);
+  revalidateStaffLayout();
   return { success: true, stage: nextStage };
 }
 
@@ -98,6 +103,7 @@ export async function createMatterAction(name: string, clientPartyId: string, ty
   revalidatePath("/clients");
   revalidatePath(`/parties/${clientPartyId}`);
   revalidatePath(`/clients/${clientPartyId}`);
+  revalidateStaffLayout();
   return { success: true, displayId };
 }
 
@@ -276,6 +282,7 @@ export async function reassignMatterAction(matterDisplayId: string, stage: strin
   await addAuditEntry(matterDisplayId, "REASSIGNED", `${stage} → ${staffName}`, matterDisplayId, session.user.id);
   revalidatePath("/matters");
   revalidatePath(`/matters/${matterDisplayId}`);
+  revalidateStaffLayout();
   return { success: true };
 }
 

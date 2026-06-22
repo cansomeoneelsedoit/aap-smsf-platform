@@ -1,5 +1,12 @@
 export type Stage = "Start" | "Prepare" | "Check" | "Lodge" | "Active";
 
+export type NavBadgeCounts = {
+  notifications: number;
+  preparation: number;
+  compliance: number;
+  lodgement: number;
+};
+
 export type UiPartyType = "PERSON" | "COMPANY" | "TRUST";
 
 export interface MatterSummary {

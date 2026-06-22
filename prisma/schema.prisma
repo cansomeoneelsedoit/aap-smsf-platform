@@ -40,6 +40,15 @@ enum PartyRole {
   MEMBER
 }
 
+enum NotificationType {
+  HANDOFF_PENDING
+  TASK_OVERDUE
+  DRAFT_READY
+  KYC_UPDATE
+  STAGE_ADVANCED
+  GENERAL
+}
+
 model User {
   id            String      @id
   name          String
@@ -60,6 +69,7 @@ model User {
   fileNotes        FileNote[]
   assignedTasks    Task[]            @relation("TaskAssignee")
   stageAssignments StageAssignment[]
+  notifications    Notification[]
 
   @@unique([email])
   @@map("user")
@@ -218,9 +228,10 @@ model Matter {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  tasks        Task[]
-  fileNotes    FileNote[]
-  auditEntries AuditEntry[]
+  tasks         Task[]
+  fileNotes     FileNote[]
+  auditEntries  AuditEntry[]
+  notifications Notification[]
 }
 
 model Task {
@@ -267,4 +278,19 @@ model StageAssignment {
   stage   Stage  @id
   staffId String
   staff   User   @relation(fields: [staffId], references: [id])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  message   String
+  matterId  String?
+  matter    Matter?          @relation(fields: [matterId], references: [id], onDelete: SetNull)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@map("notification")
 }
